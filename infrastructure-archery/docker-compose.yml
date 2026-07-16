@@ -1,0 +1,93 @@
+services:
+  frontend-archery:
+    build:
+      context: ../frontend/mi-app
+      dockerfile: Dockerfile
+    container_name: frontend-archery
+    ports:
+      - "${FRONT_PORT:-3000}:3000"
+    environment:
+      TZ: "${APP_TIMEZONE:-America/Santiago}"
+    volumes:
+      - ../frontend/mi-app:/app
+      - /app/node_modules
+    restart: unless-stopped
+    networks:
+      - archeryNetwork
+
+  backend-archery:
+    build:
+      context: ../backend/demo
+      dockerfile: Dockerfile
+    container_name: backend-archery
+    ports:
+       - "${BACK_PORT:-8080}:8080"
+    environment:
+      APP_TIMEZONE: "${APP_TIMEZONE:-America/Santiago}"
+      TZ: "${APP_TIMEZONE:-America/Santiago}"
+      JAVA_TOOL_OPTIONS: "-Duser.timezone=${APP_TIMEZONE:-America/Santiago}"
+      POSTGRES_HOST: "${POSTGRES_HOST:-database-archery}"
+      POSTGRES_PORT: "${POSTGRES_PORT:-5432}"
+      POSTGRES_DB: "${POSTGRES_DB:-archeryDb}"
+      POSTGRES_USER: "${POSTGRES_USER:-archeryUser}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-12345}"
+    volumes:
+      - ../backend/demo:/app
+    depends_on:
+      database-archery:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - archeryNetwork
+
+  database-archery:
+    # AQUÍ ESTÁ EL CAMBIO CLAVE: Usamos la imagen oficial de PostGIS
+    image: postgis/postgis:16-3.4-alpine
+    container_name: database-archery
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-archeryDb}"
+      POSTGRES_USER: "${POSTGRES_USER:-archeryUser}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-12345}"
+      TZ: "${APP_TIMEZONE:-America/Santiago}"
+      PGTZ: "${APP_TIMEZONE:-America/Santiago}"
+    volumes:
+      - archeryPostgresData:/var/lib/postgresql/data
+      - ../database:/docker-entrypoint-initdb.d
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-archeryUser} -d ${POSTGRES_DB:-archeryDb}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - archeryNetwork
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_DEFAULT_EMAIL:-example@gmail.com}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_DEFAULT_PASSWORD:-12345}"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    depends_on:
+      - database-archery
+    networks:
+      - archeryNetwork
+
+volumes:
+  archeryPostgresData:
+    name: archeryPostgresData
+    driver: local
+
+networks:
+  archeryNetwork:
+    name: archeryNetwork
+    driver: bridge

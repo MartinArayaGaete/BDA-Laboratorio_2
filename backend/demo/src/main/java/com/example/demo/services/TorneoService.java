@@ -159,10 +159,4 @@ public class TorneoService {
             );
         }
     }
-
-    
-    public Torneo obtenerPorId(Long idTorneo) {
-        return torneoRepository.buscarPorId(idTorneo)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
-    }
 }

@@ -1,6 +1,7 @@
 package com.example.demo.controllers;
 
 import com.example.demo.dtos.UserInfoDTO;
+import com.example.demo.dtos.UsuarioEditarDTO;
 import com.example.demo.dtos.UsuarioRegistroDTO;
 import com.example.demo.dtos.UsuariosPaginadosResponse;
 import com.example.demo.models.Usuario;
@@ -60,7 +61,7 @@ public class UsuarioController {
 
     // Actualiza los datos de un usuario existente identificado por su RUT
     @PutMapping("/{rut}")
-    public ResponseEntity<UserInfoDTO> updateUser(@PathVariable String rut, @RequestBody UsuarioRegistroDTO dto) {
+    public ResponseEntity<UserInfoDTO> updateUser(@PathVariable String rut, @RequestBody UsuarioEditarDTO dto) {
         try {
             usuarioService.update(rut, dto);
             Usuario updatedUsuario = usuarioService.findByRut(rut).get();

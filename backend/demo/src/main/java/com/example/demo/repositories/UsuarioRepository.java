@@ -78,4 +78,9 @@ public class UsuarioRepository {
         int offset = page * size;
         return jdbcTemplate.query(sql, (rs, rowNum) -> mapRowToUsuario(rs), rol, size, offset);
     }
+
+    public void actualizarUsuarioSinPassword(String rut, String nombre, String correo, String rol) {
+        String sql = "UPDATE usuario SET nombre = ?, correo = ?, rol = ? WHERE rut = ?";
+        jdbcTemplate.update(sql, nombre, correo, rol, rut);
+    }
 }

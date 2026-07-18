@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import usuarioService from "../../api/apiUsuarios.js";
 import TablaUsuarios from "../../components/admin/TablaUsuarios.jsx";
 import LoadingSpinner from "../../components/common/LoadingSpinner.jsx";
@@ -9,10 +9,14 @@ export default function UsuariosView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const cargarUsuarios = useCallback(() => {
+    setLoading(true);
+    setError("");
     usuarioService
       .obtenerTodos()
-      .then(setUsuarios)
+      .then((data) => {
+        setUsuarios(data);
+      })
       .catch((err) => {
         setError("Error al cargar usuarios");
         console.error(err);
@@ -20,13 +24,15 @@ export default function UsuariosView() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    cargarUsuarios();
+  }, [cargarUsuarios]);
+
   if (loading) return <LoadingSpinner message="Cargando usuarios..." />;
 
   return (
     <div>
-      <h2 className="mb-4" color="black">
-        👥 Gestión de Usuarios
-      </h2>
+      <h2 className="mb-4 text-dark">Gestión de Usuarios</h2>
       {error && <div className="alert alert-danger">{error}</div>}
       {usuarios.length === 0 ? (
         <EmptyState
@@ -35,7 +41,10 @@ export default function UsuariosView() {
           message="No se encontraron usuarios registrados"
         />
       ) : (
-        <TablaUsuarios usuarios={usuarios} />
+        <TablaUsuarios
+          usuarios={usuarios}
+          onUsuarioActualizado={cargarUsuarios}
+        />
       )}
     </div>
   );

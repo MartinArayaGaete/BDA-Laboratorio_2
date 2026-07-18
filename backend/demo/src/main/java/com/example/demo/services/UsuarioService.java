@@ -1,6 +1,7 @@
 package com.example.demo.services;
 
 import com.example.demo.dtos.UserInfoDTO;
+import com.example.demo.dtos.UsuarioEditarDTO;
 import com.example.demo.dtos.UsuarioRegistroDTO;
 import com.example.demo.dtos.UsuariosPaginadosResponse;
 import com.example.demo.models.Usuario;
@@ -37,12 +38,11 @@ public class UsuarioService {
         usuarioRepository.crearUsuario(dto.getRut(), dto.getNombre(), dto.getCorreo(), passwordPlana, dto.getRol());
     }
 
-    public void update(String rut, UsuarioRegistroDTO dto) {
+    public void update(String rut, UsuarioEditarDTO dto) {
         if (!usuarioRepository.existePorRut(rut)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado");
         }
-        String passwordPlana = dto.getContrasena();
-        usuarioRepository.actualizarUsuario(rut, dto.getNombre(), dto.getCorreo(), passwordPlana, dto.getRol());
+        usuarioRepository.actualizarUsuarioSinPassword(rut, dto.getNombre(), dto.getCorreo(), dto.getRol());
     }
 
     public void deleteByRut(String rut) {

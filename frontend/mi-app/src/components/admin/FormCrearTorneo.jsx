@@ -1,9 +1,53 @@
-import React, { useState, useEffect } from "react";
+// src/components/admin/FormCrearTorneo.jsx
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import torneoService from "../../api/apiTorneos.js";
 import categoriaService from "../../api/apiCategorias.js";
+import {
+  DEFAULT_COORDS_LINEA_TIRO,
+  DEFAULT_COORDS_ZONA_COMPETENCIA,
+  coordsLineaToLineString,
+  coordsZonaToPolygon,
+} from "../../hooks/useTorneoMapSelection.js";
 
-export default function FormCrearTorneo() {
+const ZONA_FIELDS = [
+  { label: "Punto 1", lat: "lat1", lng: "lng1" },
+  { label: "Punto 2", lat: "lat2", lng: "lng2" },
+  { label: "Punto 3", lat: "lat3", lng: "lng3" },
+  { label: "Punto 4", lat: "lat4", lng: "lng4" },
+];
+
+const LINEA_FIELDS = [
+  { label: "Inicio", lat: "latInicio", lng: "lngInicio" },
+  { label: "Fin", lat: "latFin", lng: "lngFin" },
+];
+
+function ReadonlyCoordinateGroup({ label, latValue, lngValue }) {
+  return (
+    <div className="col-md-3">
+      <label className="form-label small">{label}</label>
+      <input
+        type="text"
+        className="form-control form-control-sm bg-light"
+        placeholder="Lat"
+        value={latValue}
+        readOnly
+      />
+      <input
+        type="text"
+        className="form-control form-control-sm bg-light mt-1"
+        placeholder="Lng"
+        value={lngValue}
+        readOnly
+      />
+    </div>
+  );
+}
+
+export default function FormCrearTorneo({
+  coordsZonaCompetencia = DEFAULT_COORDS_ZONA_COMPETENCIA,
+  coordsLineaTiro = DEFAULT_COORDS_LINEA_TIRO,
+}) {
   const navigate = useNavigate();
   const [categorias, setCategorias] = useState([]);
   const [loadingCategorias, setLoadingCategorias] = useState(true);
@@ -17,72 +61,49 @@ export default function FormCrearTorneo() {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const minDate = useMemo(() => new Date().toISOString().split("T")[0], []);
 
-  const [coordsZona, setCoordsZona] = useState({
-    lat1: "-33.45",
-    lng1: "-70.636",
-    lat2: "-33.45",
-    lng2: "-70.632",
-    lat3: "-33.446",
-    lng3: "-70.632",
-    lat4: "-33.446",
-    lng4: "-70.636",
-  });
+  const zonaGeoJSON = useMemo(() => {
+    return coordsZonaToPolygon(coordsZonaCompetencia);
+  }, [coordsZonaCompetencia]);
 
-  const [coordsLinea, setCoordsLinea] = useState({
-    latInicio: "-33.448",
-    lngInicio: "-70.635",
-    latFin: "-33.448",
-    lngFin: "-70.633",
-  });
+  const lineaGeoJSON = useMemo(() => {
+    return coordsLineaToLineString(coordsLineaTiro);
+  }, [coordsLineaTiro]);
+
+  const coordenadasCompletas = Boolean(zonaGeoJSON && lineaGeoJSON);
 
   useEffect(() => {
-    cargarCategorias();
-  }, []);
+    let ignore = false;
 
-  const cargarCategorias = async () => {
-    try {
-      setLoadingCategorias(true);
-      const data = await categoriaService.obtenerTodas();
-      setCategorias(data || []);
-    } catch (err) {
-      console.error("Error al cargar categorías:", err);
-      setError("No se pudieron cargar las categorías.");
-    } finally {
-      setLoadingCategorias(false);
-    }
-  };
+    categoriaService
+      .obtenerTodas()
+      .then((data) => {
+        if (!ignore) {
+          setCategorias(data || []);
+        }
+      })
+      .catch((err) => {
+        console.error("Error al cargar categorias:", err);
+
+        if (!ignore) {
+          setError("No se pudieron cargar las categorias.");
+        }
+      })
+      .finally(() => {
+        if (!ignore) {
+          setLoadingCategorias(false);
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError("");
-  };
-
-  const handleCoordsZonaChange = (e) => {
-    setCoordsZona({ ...coordsZona, [e.target.name]: e.target.value });
-  };
-
-  const handleCoordsLineaChange = (e) => {
-    setCoordsLinea({ ...coordsLinea, [e.target.name]: e.target.value });
-  };
-
-  const aplicarPresetSantiago = () => {
-    setCoordsZona({
-      lat1: "-33.45",
-      lng1: "-70.636",
-      lat2: "-33.45",
-      lng2: "-70.632",
-      lat3: "-33.446",
-      lng3: "-70.632",
-      lat4: "-33.446",
-      lng4: "-70.636",
-    });
-    setCoordsLinea({
-      latInicio: "-33.448",
-      lngInicio: "-70.635",
-      latFin: "-33.448",
-      lngFin: "-70.633",
-    });
   };
 
   const handleSubmit = async (e) => {
@@ -94,49 +115,37 @@ export default function FormCrearTorneo() {
       setError("El nombre del torneo es obligatorio");
       return;
     }
+
     if (!formData.idCategoria) {
-      setError("Debe seleccionar una categoría");
+      setError("Debe seleccionar una categoria");
       return;
     }
+
     if (!formData.fechaInicio || !formData.fechaTermino) {
       setError("Debe seleccionar las fechas");
       return;
     }
+
     if (formData.fechaInicio > formData.fechaTermino) {
-      setError("La fecha de inicio no puede ser posterior a la de término");
+      setError("La fecha de inicio no puede ser posterior a la de termino");
       return;
     }
 
-    const geomZonaCompetencia = JSON.stringify({
-      type: "Polygon",
-      coordinates: [
-        [
-          [parseFloat(coordsZona.lng1), parseFloat(coordsZona.lat1)],
-          [parseFloat(coordsZona.lng2), parseFloat(coordsZona.lat2)],
-          [parseFloat(coordsZona.lng3), parseFloat(coordsZona.lat3)],
-          [parseFloat(coordsZona.lng4), parseFloat(coordsZona.lat4)],
-          [parseFloat(coordsZona.lng1), parseFloat(coordsZona.lat1)],
-        ],
-      ],
-    });
-
-    const lineaTiro = JSON.stringify({
-      type: "LineString",
-      coordinates: [
-        [parseFloat(coordsLinea.lngInicio), parseFloat(coordsLinea.latInicio)],
-        [parseFloat(coordsLinea.lngFin), parseFloat(coordsLinea.latFin)],
-      ],
-    });
+    if (!zonaGeoJSON || !lineaGeoJSON) {
+      setError("Debe definir la zona de competencia y la linea de tiro.");
+      return;
+    }
 
     setGuardando(true);
+
     try {
       await torneoService.crearTorneo({
         nombreTorneo: formData.nombreTorneo,
         idCategoria: parseInt(formData.idCategoria),
         fechaInicio: formData.fechaInicio,
         fechaTermino: formData.fechaTermino,
-        geomZonaCompetencia,
-        lineaTiro,
+        geomZonaCompetencia: JSON.stringify(zonaGeoJSON),
+        lineaTiro: JSON.stringify(lineaGeoJSON),
       });
 
       const todos = await torneoService.obtenerTodos();
@@ -146,15 +155,17 @@ export default function FormCrearTorneo() {
 
       if (torneoCreado) {
         const promesasRondas = [];
+
         for (let i = 1; i <= parseInt(formData.numeroRondas); i++) {
           promesasRondas.push(
             torneoService.crearRonda(torneoCreado.idTorneo, i),
           );
         }
+
         await Promise.all(promesasRondas);
       }
 
-      setSuccess("¡Torneo creado exitosamente! Redirigiendo...");
+      setSuccess("Torneo creado exitosamente. Redirigiendo...");
       setTimeout(() => navigate("/admin/torneos"), 2000);
     } catch (err) {
       console.error("Error al crear torneo:", err);
@@ -165,327 +176,204 @@ export default function FormCrearTorneo() {
 
   if (loadingCategorias) {
     return (
-      <div className="container py-4 text-center">
-        <div className="spinner-border text-dark" role="status" />
-        <p className="mt-2 text-dark">Cargando datos...</p>
+      <div className="card shadow">
+        <div className="card-body py-5 text-center">
+          <div className="spinner-border text-primary" role="status" />
+          <p className="mt-2 text-muted">Cargando datos...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container py-4">
-      <div
-        className="card shadow mx-auto bg-white"
-        style={{ maxWidth: "800px" }}
-      >
-        <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-          <h4 className="mb-0 text-white">Crear Nuevo Torneo</h4>
-          <button
-            className="btn btn-sm btn-outline-light"
-            onClick={() => navigate("/admin/torneos")}
-          >
-            ← Volver
-          </button>
-        </div>
-        <div className="card-body bg-white">
-          {error && (
-            <div className="alert alert-danger alert-dismissible fade show">
-              {error}
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setError("")}
-              ></button>
-            </div>
-          )}
-          {success && (
-            <div className="alert alert-success alert-dismissible fade show">
-              {success}
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setSuccess("")}
-              ></button>
-            </div>
-          )}
-
-          {categorias.length === 0 && (
-            <div className="alert alert-warning text-dark">
-              No hay categorías disponibles.{" "}
-              <button
-                className="btn btn-sm btn-outline-dark ms-2"
-                onClick={() => navigate("/admin/categorias")}
-              >
-                Ir a Categorías
-              </button>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            <h5 className="mb-3 text-dark">📋 Datos del Torneo</h5>
-            <div className="row g-3 mb-4">
-              <div className="col-md-6">
-                <label className="form-label fw-bold text-dark">
-                  Nombre del Torneo *
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  name="nombreTorneo"
-                  value={formData.nombreTorneo}
-                  onChange={handleChange}
-                  required
-                  placeholder="Ej: Copa Metropolitana 2026"
-                  disabled={guardando || categorias.length === 0}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label fw-bold text-dark">
-                  Categoría *
-                </label>
-                <select
-                  className="form-select"
-                  name="idCategoria"
-                  value={formData.idCategoria}
-                  onChange={handleChange}
-                  required
-                  disabled={guardando || categorias.length === 0}
-                >
-                  <option value="">Seleccione...</option>
-                  {categorias.map((c) => (
-                    <option key={c.idCategoria} value={c.idCategoria}>
-                      {c.nombreCategoria}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-md-3">
-                <label className="form-label fw-bold text-dark">
-                  N° Rondas *
-                </label>
-                <input
-                  type="number"
-                  className="form-control"
-                  name="numeroRondas"
-                  value={formData.numeroRondas}
-                  onChange={handleChange}
-                  min="1"
-                  max="10"
-                  required
-                  disabled={guardando || categorias.length === 0}
-                />
-              </div>
-            </div>
-
-            <div className="row g-3 mb-4">
-              <div className="col-md-6">
-                <label className="form-label fw-bold text-dark">
-                  Fecha Inicio *
-                </label>
-                <input
-                  type="date"
-                  className="form-control"
-                  name="fechaInicio"
-                  value={formData.fechaInicio}
-                  onChange={handleChange}
-                  required
-                  disabled={guardando || categorias.length === 0}
-                  min={new Date().toISOString().split("T")[0]}
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label fw-bold text-dark">
-                  Fecha Término *
-                </label>
-                <input
-                  type="date"
-                  className="form-control"
-                  name="fechaTermino"
-                  value={formData.fechaTermino}
-                  onChange={handleChange}
-                  required
-                  disabled={guardando || categorias.length === 0}
-                  min={
-                    formData.fechaInicio ||
-                    new Date().toISOString().split("T")[0]
-                  }
-                />
-              </div>
-            </div>
-
-            <h5 className="mb-3 text-dark">
-              🗺️ Zona de Competencia (Polígono - 4 puntos)
-            </h5>
-            <div className="row g-2 mb-3">
-              <div className="col-md-3">
-                <label className="form-label small text-dark">
-                  Punto 1 (Sup-Izq)
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Lat"
-                  name="lat1"
-                  value={coordsZona.lat1}
-                  onChange={handleCoordsZonaChange}
-                />
-                <input
-                  type="text"
-                  className="form-control form-control-sm mt-1"
-                  placeholder="Lng"
-                  name="lng1"
-                  value={coordsZona.lng1}
-                  onChange={handleCoordsZonaChange}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label small text-dark">
-                  Punto 2 (Sup-Der)
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Lat"
-                  name="lat2"
-                  value={coordsZona.lat2}
-                  onChange={handleCoordsZonaChange}
-                />
-                <input
-                  type="text"
-                  className="form-control form-control-sm mt-1"
-                  placeholder="Lng"
-                  name="lng2"
-                  value={coordsZona.lng2}
-                  onChange={handleCoordsZonaChange}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label small text-dark">
-                  Punto 3 (Inf-Der)
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Lat"
-                  name="lat3"
-                  value={coordsZona.lat3}
-                  onChange={handleCoordsZonaChange}
-                />
-                <input
-                  type="text"
-                  className="form-control form-control-sm mt-1"
-                  placeholder="Lng"
-                  name="lng3"
-                  value={coordsZona.lng3}
-                  onChange={handleCoordsZonaChange}
-                />
-              </div>
-              <div className="col-md-3">
-                <label className="form-label small text-dark">
-                  Punto 4 (Inf-Izq)
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Lat"
-                  name="lat4"
-                  value={coordsZona.lat4}
-                  onChange={handleCoordsZonaChange}
-                />
-                <input
-                  type="text"
-                  className="form-control form-control-sm mt-1"
-                  placeholder="Lng"
-                  name="lng4"
-                  value={coordsZona.lng4}
-                  onChange={handleCoordsZonaChange}
-                />
-              </div>
-            </div>
-
-            <h5 className="mb-3 text-dark">🎯 Línea de Tiro (2 puntos)</h5>
-            <div className="row g-2 mb-4">
-              <div className="col-md-6">
-                <label className="form-label small text-dark">
-                  Punto Inicio
-                </label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Lat"
-                  name="latInicio"
-                  value={coordsLinea.latInicio}
-                  onChange={handleCoordsLineaChange}
-                />
-                <input
-                  type="text"
-                  className="form-control form-control-sm mt-1"
-                  placeholder="Lng"
-                  name="lngInicio"
-                  value={coordsLinea.lngInicio}
-                  onChange={handleCoordsLineaChange}
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label small text-dark">Punto Fin</label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  placeholder="Lat"
-                  name="latFin"
-                  value={coordsLinea.latFin}
-                  onChange={handleCoordsLineaChange}
-                />
-                <input
-                  type="text"
-                  className="form-control form-control-sm mt-1"
-                  placeholder="Lng"
-                  name="lngFin"
-                  value={coordsLinea.lngFin}
-                  onChange={handleCoordsLineaChange}
-                />
-              </div>
-            </div>
-
+    <div className="card shadow">
+      <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h4 className="mb-0">Crear Nuevo Torneo</h4>
+        <button
+          className="btn btn-sm btn-outline-light"
+          onClick={() => navigate("/admin/torneos")}
+        >
+          Volver
+        </button>
+      </div>
+      <div className="card-body">
+        {error && (
+          <div className="alert alert-danger alert-dismissible fade show">
+            {error}
             <button
               type="button"
-              className="btn btn-outline-dark btn-sm mb-3"
-              onClick={aplicarPresetSantiago}
+              className="btn-close"
+              onClick={() => setError("")}
+            ></button>
+          </div>
+        )}
+        {success && (
+          <div className="alert alert-success alert-dismissible fade show">
+            {success}
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setSuccess("")}
+            ></button>
+          </div>
+        )}
+
+        {categorias.length === 0 && (
+          <div className="alert alert-warning">
+            No hay categorias disponibles.{" "}
+            <button
+              className="btn btn-sm btn-outline-warning ms-2"
+              onClick={() => navigate("/admin/categorias")}
             >
-              📍 Usar coordenadas de Santiago (preset)
+              Ir a Categorias
             </button>
+          </div>
+        )}
 
-            <div className="alert alert-light text-dark small">
-              <strong>ℹ️ Formato:</strong> Latitud y Longitud en grados
-              decimales (WGS 84). Ej: Lat: -33.448, Lng: -70.634
+        {!coordenadasCompletas && (
+          <div className="alert alert-warning">
+            Faltan coordenadas para crear la geometria del torneo.
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <h5 className="mb-3">Datos del Torneo</h5>
+          <div className="row g-3 mb-4">
+            <div className="col-md-6">
+              <label className="form-label fw-bold">Nombre del Torneo *</label>
+              <input
+                type="text"
+                className="form-control"
+                name="nombreTorneo"
+                value={formData.nombreTorneo}
+                onChange={handleChange}
+                required
+                placeholder="Ej: Copa Metropolitana 2026"
+                disabled={guardando || categorias.length === 0}
+              />
             </div>
-
-            <div className="d-flex justify-content-end gap-2">
-              <button
-                type="button"
-                className="btn btn-outline-dark"
-                onClick={() => navigate("/admin/torneos")}
-                disabled={guardando}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="btn btn-dark"
+            <div className="col-md-3">
+              <label className="form-label fw-bold">Categoria *</label>
+              <select
+                className="form-select"
+                name="idCategoria"
+                value={formData.idCategoria}
+                onChange={handleChange}
+                required
                 disabled={guardando || categorias.length === 0}
               >
-                {guardando ? (
-                  <>
-                    <span className="spinner-border spinner-border-sm me-2"></span>
-                    Creando...
-                  </>
-                ) : (
-                  "Crear Torneo"
-                )}
-              </button>
+                <option value="">Seleccione...</option>
+                {categorias.map((categoria) => (
+                  <option
+                    key={categoria.idCategoria}
+                    value={categoria.idCategoria}
+                  >
+                    {categoria.nombreCategoria}
+                  </option>
+                ))}
+              </select>
             </div>
-          </form>
-        </div>
+            <div className="col-md-3">
+              <label className="form-label fw-bold">N° Rondas *</label>
+              <input
+                type="number"
+                className="form-control"
+                name="numeroRondas"
+                value={formData.numeroRondas}
+                onChange={handleChange}
+                min="1"
+                max="10"
+                required
+                disabled={guardando || categorias.length === 0}
+              />
+            </div>
+          </div>
+
+          <div className="row g-3 mb-4">
+            <div className="col-md-6">
+              <label className="form-label fw-bold">Fecha Inicio *</label>
+              <input
+                type="date"
+                className="form-control"
+                name="fechaInicio"
+                value={formData.fechaInicio}
+                onChange={handleChange}
+                required
+                disabled={guardando || categorias.length === 0}
+                min={minDate}
+              />
+            </div>
+            <div className="col-md-6">
+              <label className="form-label fw-bold">Fecha Termino *</label>
+              <input
+                type="date"
+                className="form-control"
+                name="fechaTermino"
+                value={formData.fechaTermino}
+                onChange={handleChange}
+                required
+                disabled={guardando || categorias.length === 0}
+                min={formData.fechaInicio || minDate}
+              />
+            </div>
+          </div>
+
+          <h5 className="mb-3">Zona de Competencia</h5>
+          <div className="row g-2 mb-3">
+            {ZONA_FIELDS.map((field) => (
+              <ReadonlyCoordinateGroup
+                key={field.label}
+                label={field.label}
+                latValue={coordsZonaCompetencia[field.lat]}
+                lngValue={coordsZonaCompetencia[field.lng]}
+              />
+            ))}
+          </div>
+
+          <h5 className="mb-3">Linea de Tiro</h5>
+          <div className="row g-2 mb-4">
+            {LINEA_FIELDS.map((field) => (
+              <ReadonlyCoordinateGroup
+                key={field.label}
+                label={field.label}
+                latValue={coordsLineaTiro[field.lat]}
+                lngValue={coordsLineaTiro[field.lng]}
+              />
+            ))}
+          </div>
+
+          <div className="alert alert-info small">
+            <strong>Formato:</strong> Latitud y Longitud en grados decimales
+            WGS 84. Ej: Lat: -33.448, Lng: -70.634
+          </div>
+
+          <div className="d-flex justify-content-end gap-2">
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={() => navigate("/admin/torneos")}
+              disabled={guardando}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="btn btn-dark"
+              disabled={
+                guardando || categorias.length === 0 || !coordenadasCompletas
+              }
+            >
+              {guardando ? (
+                <>
+                  <span className="spinner-border spinner-border-sm me-2"></span>
+                  Creando...
+                </>
+              ) : (
+                "Crear Torneo"
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

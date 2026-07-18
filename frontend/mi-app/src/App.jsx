@@ -33,10 +33,7 @@ function App() {
             <Route path="/admin" element={<DashboardView />} />
             <Route path="/admin/torneos" element={<TorneosListView />} />
             <Route path="/admin/torneos/crear" element={<CrearTorneoView />} />
-            <Route
-              path="/admin/torneos/:idTorneo"
-              element={<TorneoDetalleView />}
-            />
+            <Route path="/admin/torneos/:idTorneo" element={<TorneoDetalleView />}/>
             <Route path="/admin/usuarios" element={<UsuariosView />} />
             <Route path="/admin/categorias" element={<CategoriasView />} />
             <Route path="/admin/logs" element={<LogsView />} />

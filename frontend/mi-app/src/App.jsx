@@ -4,7 +4,6 @@ import LoginView from "./views/LoginView.jsx";
 import { ProtectedRoute } from "./components/common/ProtectedRoute.jsx";
 import Layout from "./components/common/Layout.jsx";
 
-// Vistas Admin
 import DashboardView from "./views/admin/DashboardView.jsx";
 import TorneosListView from "./views/admin/TorneosListView.jsx";
 import CrearTorneoView from "./views/admin/CrearTorneoView.jsx";
@@ -13,7 +12,6 @@ import UsuariosView from "./views/admin/UsuariosView.jsx";
 import CategoriasView from "./views/admin/CategoriasView.jsx";
 import LogsView from "./views/admin/LogsView.jsx";
 
-// Vistas Arquero
 import ArcherDashboardView from "./views/archer/ArcherDashboardView.jsx";
 import TorneosView from "./views/archer/TorneosView.jsx";
 import HistorialView from "./views/archer/HistorialView.jsx";
@@ -26,10 +24,8 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginView />} />
 
-        {/* Rutas protegidas con Layout */}
-        <Route element={<ProtectedRoute allowedRoles={["ADMIN", "ARQUERO"]} />}>
-          <Route element={<Layout />}>
-            {/* Rutas de ADMIN */}
+        <Route element={<Layout />}>
+          <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
             <Route path="/admin" element={<DashboardView />} />
             <Route path="/admin/torneos" element={<TorneosListView />} />
             <Route path="/admin/torneos/crear" element={<CrearTorneoView />} />
@@ -40,8 +36,9 @@ function App() {
             <Route path="/admin/usuarios" element={<UsuariosView />} />
             <Route path="/admin/categorias" element={<CategoriasView />} />
             <Route path="/admin/logs" element={<LogsView />} />
+          </Route>
 
-            {/* Rutas de ARQUERO */}
+          <Route element={<ProtectedRoute allowedRoles={["ARQUERO"]} />}>
             <Route path="/archer" element={<ArcherDashboardView />} />
             <Route path="/archer/torneos" element={<TorneosView />} />
             <Route path="/archer/historial" element={<HistorialView />} />

@@ -18,7 +18,6 @@ export default function LogsView() {
     apiLogs
       .obtenerAuditoria(page, 10)
       .then((data) => {
-        // La respuesta tiene: { logs: [...], page, size, totalElements, totalPages }
         if (data && data.logs) {
           setLogs(data.logs);
           setTotalPages(data.totalPages || 0);

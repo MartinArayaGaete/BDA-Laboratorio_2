@@ -41,7 +41,6 @@ services:
       - archeryNetwork
 
   database-archery:
-    # AQUÍ ESTÁ EL CAMBIO CLAVE: Usamos la imagen oficial de PostGIS
     image: postgis/postgis:16-3.4-alpine
     container_name: database-archery
     environment:

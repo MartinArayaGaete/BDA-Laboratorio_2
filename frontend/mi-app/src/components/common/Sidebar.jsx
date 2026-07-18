@@ -15,17 +15,17 @@ export default function Sidebar() {
 
   const menuItems = isAdmin
     ? [
-        { path: "/admin", label: "Dashboard", icon: "📊" },
-        { path: "/admin/torneos", label: "Torneos", icon: "🏆" },
-        { path: "/admin/usuarios", label: "Usuarios", icon: "👥" },
-        { path: "/admin/categorias", label: "Categorías", icon: "📑" },
-        { path: "/admin/logs", label: "Auditoría", icon: "📋" },
+        { path: "/admin", label: "Dashboard" },
+        { path: "/admin/torneos", label: "Torneos" },
+        { path: "/admin/usuarios", label: "Usuarios" },
+        { path: "/admin/categorias", label: "Categorías" },
+        { path: "/admin/logs", label: "Auditoría" },
       ]
     : [
-        { path: "/archer", label: "Mi Panel", icon: "🎯" },
-        { path: "/archer/torneos", label: "Torneos", icon: "🏆" },
-        { path: "/archer/historial", label: "Historial", icon: "📊" },
-        { path: "/archer/estadisticas", label: "Estadísticas", icon: "📈" },
+        { path: "/archer", label: "Mi Panel" },
+        { path: "/archer/torneos", label: "Torneos" },
+        { path: "/archer/historial", label: "Historial" },
+        { path: "/archer/estadisticas", label: "Estadísticas" },
       ];
 
   const isActive = (path) => {
@@ -42,7 +42,7 @@ export default function Sidebar() {
     >
       {/* Logo */}
       <div className="px-3 py-4 text-center border-bottom border-secondary">
-        <h4 className="text-warning mb-1">🏹 ArcheryApp</h4>
+        <h4 className="text-warning mb-1">Sistema de Arquería</h4>
         <small className="text-white-50">
           {isAdmin ? "Administrador" : "Arquero"}
         </small>
@@ -102,7 +102,7 @@ export default function Sidebar() {
           className="btn btn-outline-light w-100 btn-sm rounded-3"
           onClick={handleLogout}
         >
-          🚪 Cerrar Sesión
+          Cerrar Sesión
         </button>
       </div>
     </div>

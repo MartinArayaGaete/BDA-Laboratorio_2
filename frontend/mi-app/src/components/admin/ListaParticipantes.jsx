@@ -1,4 +1,3 @@
-// src/components/admin/ListaParticipantes.jsx
 import React from "react";
 
 export default function ListaParticipantes({

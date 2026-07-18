@@ -1,4 +1,3 @@
-// src/components/admin/TablaLogs.jsx
 import React from "react";
 
 export default function TablaLogs({ logs }) {

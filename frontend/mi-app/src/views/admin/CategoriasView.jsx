@@ -1,4 +1,3 @@
-// src/views/admin/CategoriasView.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import categoriaService from "../../api/apiCategorias.js";
 import TablaCategorias from "../../components/admin/TablaCategorias.jsx";

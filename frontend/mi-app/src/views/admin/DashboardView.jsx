@@ -47,70 +47,72 @@ export default function DashboardView() {
 
   return (
     <div>
-      <h2 className="mb-4" color="black">
-        Dashboard Administrador
-      </h2>
+      <h2 className="mb-4 text-dark">Resumen</h2>
 
       <StatsCards stats={stats} />
 
       <div className="row g-3 mt-4">
         <div className="col-md-6">
-          <div className="card shadow-sm">
+          <div className="card shadow-sm bg-white">
             <div className="card-body">
-              <h5>🚀 Acciones Rápidas</h5>
+              <h5 className="text-dark">Acciones Rápidas</h5>
               <div className="d-grid gap-2 mt-3">
                 <button
                   className="btn btn-dark"
                   onClick={() => navigate("/admin/torneos/crear")}
                 >
-                  ➕ Crear Nuevo Torneo
+                  Crear Nuevo Torneo
                 </button>
                 <button
-                  className="btn btn-outline-primary"
+                  className="btn btn-outline-dark"
                   onClick={() => navigate("/admin/torneos")}
                 >
-                  📋 Ver Todos los Torneos
+                  Ver Todos los Torneos
                 </button>
                 <button
-                  className="btn btn-outline-success"
+                  className="btn btn-outline-dark"
                   onClick={() => navigate("/admin/usuarios")}
                 >
-                  👥 Gestionar Usuarios
+                  Gestionar Usuarios
                 </button>
                 <button
-                  className="btn btn-outline-warning"
+                  className="btn btn-outline-dark"
                   onClick={() => navigate("/admin/logs")}
                 >
-                  📊 Ver Auditoría
+                  Ver Auditoría
                 </button>
               </div>
             </div>
           </div>
         </div>
         <div className="col-md-6">
-          <div className="card shadow-sm">
+          <div className="card shadow-sm bg-white">
             <div className="card-body">
-              <h5>ℹ️ Resumen del Sistema</h5>
+              <h5 className="text-dark">Resumen del Sistema</h5>
               <ul className="list-group list-group-flush mt-3">
-                <li className="list-group-item d-flex justify-content-between">
+                <li className="list-group-item d-flex justify-content-between text-dark">
                   Torneos Totales{" "}
-                  <span className="badge bg-primary">{stats.totalTorneos}</span>
+                  <span className="badge bg-dark text-white">
+                    {stats.totalTorneos}
+                  </span>
                 </li>
-                <li className="list-group-item d-flex justify-content-between">
+                <li className="list-group-item d-flex justify-content-between text-dark">
                   En Curso{" "}
-                  <span className="badge bg-warning text-dark">
+                  <span className="badge bg-dark text-white">
                     {stats.torneosActivos}
                   </span>
                 </li>
-                <li className="list-group-item d-flex justify-content-between">
+                <li className="list-group-item d-flex justify-content-between text-dark">
                   Usuarios{" "}
-                  <span className="badge bg-success">
+                  <span className="badge bg-dark text-white">
                     {stats.totalUsuarios}
                   </span>
                 </li>
-                <li className="list-group-item d-flex justify-content-between">
+                <li className="list-group-item d-flex justify-content-between text-dark">
                   Auditoría{" "}
-                  <span className="badge bg-info">{stats.totalLogs}</span>
+                  <span className="badge bg-dark text-white">
+                    {stats.totalLogs}
+                  </span>
                 </li>
               </ul>
             </div>

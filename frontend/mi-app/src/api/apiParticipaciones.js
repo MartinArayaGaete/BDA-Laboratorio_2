@@ -1,4 +1,3 @@
-// src/api/apiParticipaciones.js
 import api from "./api";
 
 const apiParticipaciones = {

@@ -1,4 +1,3 @@
-// src/views/archer/HistorialView.jsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import arquerosService from "../../api/apiArqueros.js";

@@ -30,7 +30,7 @@ export default function TorneosListView() {
         className="d-flex justify-content-between align-items-center mb-4"
         color="black"
       >
-        <h2>🏆 Gestión de Torneos</h2>
+        <h2>Gestión de Torneos</h2>
         <button
           className="btn btn-dark"
           onClick={() => navigate("/admin/torneos/crear")}
@@ -43,7 +43,6 @@ export default function TorneosListView() {
 
       {torneos.length === 0 ? (
         <EmptyState
-          icon="🏆"
           title="No hay torneos"
           message="Crea tu primer torneo para comenzar"
           actionLabel="Crear Torneo"

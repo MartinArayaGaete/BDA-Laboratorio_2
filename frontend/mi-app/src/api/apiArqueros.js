@@ -1,4 +1,3 @@
-// src/api/apiArqueros.js
 import api from "./api";
 
 const arquerosService = {

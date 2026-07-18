@@ -1,4 +1,3 @@
-// src/views/archer/EstadisticasView.jsx
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import arquerosService from "../../api/apiArqueros.js";

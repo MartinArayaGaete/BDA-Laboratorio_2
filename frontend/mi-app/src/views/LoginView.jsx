@@ -1,4 +1,3 @@
-// src/views/LoginView.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
@@ -36,13 +35,11 @@ export default function LoginView() {
     resetForm();
   };
 
-  // Formatear RUT: solo números, K y guion (sin puntos)
-  // Ejemplo: 12345678-9
   const handleRutChange = (e) => {
     let value = e.target.value.replace(/[^0-9kK]/g, ""); // Solo números y K
 
     if (value.length > 1) {
-      const dv = value.slice(-1); // Último dígito (dígito verificador)
+      const dv = value.slice(-1); // (dígito verificador)
       const numeros = value.slice(0, -1); // El resto
       value = numeros + "-" + dv;
     }
@@ -185,7 +182,7 @@ export default function LoginView() {
       setTimeout(() => {
         setIsRegistering(false);
         setSuccess("");
-      }, 2000);
+      }, 500);
     } catch (err) {
       if (err.response?.status === 400) {
         const msg = err.response?.data?.error || err.response?.data;
@@ -226,12 +223,11 @@ export default function LoginView() {
         <div className="card-body p-4">
           {/* Logo y título */}
           <div className="text-center mb-4">
-            <div style={{ fontSize: "3rem" }}>🏹</div>
-            <h3 className="fw-bold text-dark mt-2">ArcheryApp</h3>
+            <h3 className="fw-bold text-dark mt-2">
+              Sistema de torneos de Arquería
+            </h3>
             <p className="text-muted">
-              {isRegistering
-                ? "Crear Nueva Cuenta"
-                : "Sistema de Gestión de Torneos"}
+              {isRegistering ? "Crear Nueva Cuenta" : ""}
             </p>
           </div>
 
@@ -363,8 +359,7 @@ export default function LoginView() {
                   />
                 </div>
                 <small className="text-muted">
-                  Sin puntos, con guion (ej: 12345678-9). Debe ser único en el
-                  sistema.
+                  Sin puntos, con guion (ej: 12345678-9).
                 </small>
               </div>
 
@@ -513,7 +508,7 @@ export default function LoginView() {
           {/* Footer */}
           <div className="text-center mt-3">
             <small className="text-muted">
-              ¿Problemas para ingresar? Contacte al administrador
+              ¿Problemas para ingresar? Contacte al 800 000 6767
             </small>
           </div>
         </div>

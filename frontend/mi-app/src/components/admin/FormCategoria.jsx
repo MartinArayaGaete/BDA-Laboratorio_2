@@ -1,4 +1,3 @@
-// src/components/admin/FormCategoria.jsx
 import React, { useState } from "react";
 import categoriaService from "../../api/apiCategorias.js";
 

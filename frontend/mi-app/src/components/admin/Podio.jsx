@@ -1,4 +1,3 @@
-// src/components/admin/Podio.jsx
 import React from "react";
 
 export default function Podio({ podio }) {
@@ -10,9 +9,7 @@ export default function Podio({ podio }) {
     <div className="row mt-4">
       <div className="col-12">
         <div className="card shadow-sm border-0 bg-dark p-4 rounded-3">
-          <h4 className="text-center mb-4 text-warning">
-            🏆 Podio de Ganadores Oficial
-          </h4>
+          <h4 className="text-center mb-4 text-warning">Podio de Ganadores</h4>
           <div className="d-flex flex-wrap justify-content-around text-center gap-3">
             {podio.slice(0, 3).map((p, idx) => (
               <div

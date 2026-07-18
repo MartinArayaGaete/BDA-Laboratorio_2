@@ -1,4 +1,3 @@
-// src/views/archer/TorneosView.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import torneoService from "../../api/apiTorneos.js";
@@ -243,13 +242,13 @@ export default function TorneosView() {
               </div>
               <div className="modal-body">
                 <div className="alert alert-info small mb-3">
-                  <strong>ℹ️ </strong>
+                  <strong>ℹ️</strong>
                   Debes estar dentro de la zona de competencia y a menos de 5
                   metros de la línea de tiro. Usa el preset de Santiago o
                   ingresa tus coordenadas manualmente.
                 </div>
 
-                <h6>🎯 Tu Ubicación (Arquero)</h6>
+                <h6>Tu Ubicación (Arquero)</h6>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <label className="form-label small">Latitud</label>
@@ -281,7 +280,7 @@ export default function TorneosView() {
                   </div>
                 </div>
 
-                <h6>🏹 Ubicación del Blanco</h6>
+                <h6>Ubicación del Blanco</h6>
                 <div className="row g-2 mb-3">
                   <div className="col-6">
                     <label className="form-label small">Latitud</label>
@@ -340,7 +339,7 @@ export default function TorneosView() {
                 >
                   {inscribiendo === torneoSeleccionado?.idTorneo
                     ? "Inscribiendo..."
-                    : "✅ Confirmar Inscripción"}
+                    : "Confirmar Inscripción"}
                 </button>
               </div>
             </div>

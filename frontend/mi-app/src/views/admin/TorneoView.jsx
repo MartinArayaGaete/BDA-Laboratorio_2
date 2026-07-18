@@ -1,4 +1,3 @@
-// src/views/admin/TorneoDetalleView.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import torneoService from "../../api/apiTorneos.js";
@@ -32,7 +31,7 @@ export default function TorneoDetalleView() {
       setLoading(true);
       const todosTorneos = await torneoService.obtenerTodos();
       const torneoActual = todosTorneos.find(
-        (t) => t.idTorneo === parseInt(idTorneo)
+        (t) => t.idTorneo === parseInt(idTorneo),
       );
 
       if (!torneoActual) {
@@ -43,8 +42,13 @@ export default function TorneoDetalleView() {
       setTorneo(torneoActual);
 
       const [inscritosData, rondasData, podioData] = await Promise.all([
-        participacionService.obtenerInscritosPorTorneo(idTorneo).catch(() => []),
-        api.get(`/rondas/torneo/${idTorneo}`).then(r => r.data).catch(() => []),
+        participacionService
+          .obtenerInscritosPorTorneo(idTorneo)
+          .catch(() => []),
+        api
+          .get(`/rondas/torneo/${idTorneo}`)
+          .then((r) => r.data)
+          .catch(() => []),
         torneoActual.estadoTorneo === "COMPLETED"
           ? torneoService.obtenerPodio(idTorneo).catch(() => [])
           : Promise.resolve([]),
@@ -67,9 +71,16 @@ export default function TorneoDetalleView() {
 
   useEffect(() => {
     if (usuarioSel && rondaSel && torneo?.estadoTorneo === "IN_COURSE") {
-      api.get(`/torneos/${idTorneo}/rondas/${rondaSel}/arqueros/${usuarioSel}/flechas`)
-        .then(res => {
-          setFlechas(res.data?.length ? res.data.map(f => f.puntaje.toString()) : ["", ""]);
+      api
+        .get(
+          `/torneos/${idTorneo}/rondas/${rondaSel}/arqueros/${usuarioSel}/flechas`,
+        )
+        .then((res) => {
+          setFlechas(
+            res.data?.length
+              ? res.data.map((f) => f.puntaje.toString())
+              : ["", ""],
+          );
         })
         .catch(() => setFlechas(["", ""]));
     } else {
@@ -101,14 +112,19 @@ export default function TorneoDetalleView() {
 
   const handleGuardarPuntaje = async (e) => {
     e.preventDefault();
-    const flechasInt = flechas.map(f => parseInt(f));
-    if (flechasInt.some(f => isNaN(f))) {
+    const flechasInt = flechas.map((f) => parseInt(f));
+    if (flechasInt.some((f) => isNaN(f))) {
       alert("Completa todos los valores (0-10)");
       return;
     }
     setGuardandoPuntaje(true);
     try {
-      await torneoService.registrarPuntajes(idTorneo, usuarioSel, rondaSel, flechasInt);
+      await torneoService.registrarPuntajes(
+        idTorneo,
+        usuarioSel,
+        rondaSel,
+        flechasInt,
+      );
       alert("Puntajes guardados correctamente");
     } catch (err) {
       alert("Error al guardar puntajes");
@@ -150,9 +166,7 @@ export default function TorneoDetalleView() {
       </div>
 
       {/* Mapa del torneo */}
-      {mostrarMapa && (
-        <MapaTorneo torneo={torneo} inscritos={inscritos} />
-      )}
+      {mostrarMapa && <MapaTorneo torneo={torneo} inscritos={inscritos} />}
 
       <div className="row">
         <div className="col-md-5">

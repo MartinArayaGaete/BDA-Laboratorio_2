@@ -1,4 +1,3 @@
-// src/components/admin/FormCrearTorneo.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import torneoService from "../../api/apiTorneos.js";
@@ -19,7 +18,6 @@ export default function FormCrearTorneo() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Coordenadas de la zona de competencia (4 puntos del polígono)
   const [coordsZona, setCoordsZona] = useState({
     lat1: "-33.45",
     lng1: "-70.636",
@@ -31,7 +29,6 @@ export default function FormCrearTorneo() {
     lng4: "-70.636",
   });
 
-  // Coordenadas de la línea de tiro (2 puntos)
   const [coordsLinea, setCoordsLinea] = useState({
     latInicio: "-33.448",
     lngInicio: "-70.635",
@@ -110,7 +107,6 @@ export default function FormCrearTorneo() {
       return;
     }
 
-    // Construir GeoJSON de la zona de competencia
     const geomZonaCompetencia = JSON.stringify({
       type: "Polygon",
       coordinates: [
@@ -119,12 +115,11 @@ export default function FormCrearTorneo() {
           [parseFloat(coordsZona.lng2), parseFloat(coordsZona.lat2)],
           [parseFloat(coordsZona.lng3), parseFloat(coordsZona.lat3)],
           [parseFloat(coordsZona.lng4), parseFloat(coordsZona.lat4)],
-          [parseFloat(coordsZona.lng1), parseFloat(coordsZona.lat1)], // Cerrar polígono
+          [parseFloat(coordsZona.lng1), parseFloat(coordsZona.lat1)],
         ],
       ],
     });
 
-    // Construir GeoJSON de la línea de tiro
     const lineaTiro = JSON.stringify({
       type: "LineString",
       coordinates: [
@@ -171,17 +166,20 @@ export default function FormCrearTorneo() {
   if (loadingCategorias) {
     return (
       <div className="container py-4 text-center">
-        <div className="spinner-border text-primary" role="status" />
-        <p className="mt-2 text-muted">Cargando datos...</p>
+        <div className="spinner-border text-dark" role="status" />
+        <p className="mt-2 text-dark">Cargando datos...</p>
       </div>
     );
   }
 
   return (
     <div className="container py-4">
-      <div className="card shadow mx-auto" style={{ maxWidth: "800px" }}>
+      <div
+        className="card shadow mx-auto bg-white"
+        style={{ maxWidth: "800px" }}
+      >
         <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-          <h4 className="mb-0">Crear Nuevo Torneo</h4>
+          <h4 className="mb-0 text-white">Crear Nuevo Torneo</h4>
           <button
             className="btn btn-sm btn-outline-light"
             onClick={() => navigate("/admin/torneos")}
@@ -189,7 +187,7 @@ export default function FormCrearTorneo() {
             ← Volver
           </button>
         </div>
-        <div className="card-body">
+        <div className="card-body bg-white">
           {error && (
             <div className="alert alert-danger alert-dismissible fade show">
               {error}
@@ -212,10 +210,10 @@ export default function FormCrearTorneo() {
           )}
 
           {categorias.length === 0 && (
-            <div className="alert alert-warning">
+            <div className="alert alert-warning text-dark">
               No hay categorías disponibles.{" "}
               <button
-                className="btn btn-sm btn-outline-warning ms-2"
+                className="btn btn-sm btn-outline-dark ms-2"
                 onClick={() => navigate("/admin/categorias")}
               >
                 Ir a Categorías
@@ -224,11 +222,10 @@ export default function FormCrearTorneo() {
           )}
 
           <form onSubmit={handleSubmit}>
-            {/* Datos básicos */}
-            <h5 className="mb-3">📋 Datos del Torneo</h5>
+            <h5 className="mb-3 text-dark">📋 Datos del Torneo</h5>
             <div className="row g-3 mb-4">
               <div className="col-md-6">
-                <label className="form-label fw-bold">
+                <label className="form-label fw-bold text-dark">
                   Nombre del Torneo *
                 </label>
                 <input
@@ -243,7 +240,9 @@ export default function FormCrearTorneo() {
                 />
               </div>
               <div className="col-md-3">
-                <label className="form-label fw-bold">Categoría *</label>
+                <label className="form-label fw-bold text-dark">
+                  Categoría *
+                </label>
                 <select
                   className="form-select"
                   name="idCategoria"
@@ -261,7 +260,9 @@ export default function FormCrearTorneo() {
                 </select>
               </div>
               <div className="col-md-3">
-                <label className="form-label fw-bold">N° Rondas *</label>
+                <label className="form-label fw-bold text-dark">
+                  N° Rondas *
+                </label>
                 <input
                   type="number"
                   className="form-control"
@@ -278,7 +279,9 @@ export default function FormCrearTorneo() {
 
             <div className="row g-3 mb-4">
               <div className="col-md-6">
-                <label className="form-label fw-bold">Fecha Inicio *</label>
+                <label className="form-label fw-bold text-dark">
+                  Fecha Inicio *
+                </label>
                 <input
                   type="date"
                   className="form-control"
@@ -291,7 +294,9 @@ export default function FormCrearTorneo() {
                 />
               </div>
               <div className="col-md-6">
-                <label className="form-label fw-bold">Fecha Término *</label>
+                <label className="form-label fw-bold text-dark">
+                  Fecha Término *
+                </label>
                 <input
                   type="date"
                   className="form-control"
@@ -308,13 +313,14 @@ export default function FormCrearTorneo() {
               </div>
             </div>
 
-            {/* Zona de Competencia */}
-            <h5 className="mb-3">
+            <h5 className="mb-3 text-dark">
               🗺️ Zona de Competencia (Polígono - 4 puntos)
             </h5>
             <div className="row g-2 mb-3">
               <div className="col-md-3">
-                <label className="form-label small">Punto 1 (Sup-Izq)</label>
+                <label className="form-label small text-dark">
+                  Punto 1 (Sup-Izq)
+                </label>
                 <input
                   type="text"
                   className="form-control form-control-sm"
@@ -333,7 +339,9 @@ export default function FormCrearTorneo() {
                 />
               </div>
               <div className="col-md-3">
-                <label className="form-label small">Punto 2 (Sup-Der)</label>
+                <label className="form-label small text-dark">
+                  Punto 2 (Sup-Der)
+                </label>
                 <input
                   type="text"
                   className="form-control form-control-sm"
@@ -352,7 +360,9 @@ export default function FormCrearTorneo() {
                 />
               </div>
               <div className="col-md-3">
-                <label className="form-label small">Punto 3 (Inf-Der)</label>
+                <label className="form-label small text-dark">
+                  Punto 3 (Inf-Der)
+                </label>
                 <input
                   type="text"
                   className="form-control form-control-sm"
@@ -371,7 +381,9 @@ export default function FormCrearTorneo() {
                 />
               </div>
               <div className="col-md-3">
-                <label className="form-label small">Punto 4 (Inf-Izq)</label>
+                <label className="form-label small text-dark">
+                  Punto 4 (Inf-Izq)
+                </label>
                 <input
                   type="text"
                   className="form-control form-control-sm"
@@ -391,11 +403,12 @@ export default function FormCrearTorneo() {
               </div>
             </div>
 
-            {/* Línea de Tiro */}
-            <h5 className="mb-3">🎯 Línea de Tiro (2 puntos)</h5>
+            <h5 className="mb-3 text-dark">🎯 Línea de Tiro (2 puntos)</h5>
             <div className="row g-2 mb-4">
               <div className="col-md-6">
-                <label className="form-label small">Punto Inicio</label>
+                <label className="form-label small text-dark">
+                  Punto Inicio
+                </label>
                 <input
                   type="text"
                   className="form-control form-control-sm"
@@ -414,7 +427,7 @@ export default function FormCrearTorneo() {
                 />
               </div>
               <div className="col-md-6">
-                <label className="form-label small">Punto Fin</label>
+                <label className="form-label small text-dark">Punto Fin</label>
                 <input
                   type="text"
                   className="form-control form-control-sm"
@@ -436,13 +449,13 @@ export default function FormCrearTorneo() {
 
             <button
               type="button"
-              className="btn btn-outline-secondary btn-sm mb-3"
+              className="btn btn-outline-dark btn-sm mb-3"
               onClick={aplicarPresetSantiago}
             >
               📍 Usar coordenadas de Santiago (preset)
             </button>
 
-            <div className="alert alert-info small">
+            <div className="alert alert-light text-dark small">
               <strong>ℹ️ Formato:</strong> Latitud y Longitud en grados
               decimales (WGS 84). Ej: Lat: -33.448, Lng: -70.634
             </div>
@@ -450,7 +463,7 @@ export default function FormCrearTorneo() {
             <div className="d-flex justify-content-end gap-2">
               <button
                 type="button"
-                className="btn btn-outline-secondary"
+                className="btn btn-outline-dark"
                 onClick={() => navigate("/admin/torneos")}
                 disabled={guardando}
               >

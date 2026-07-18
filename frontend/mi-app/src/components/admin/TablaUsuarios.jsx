@@ -1,4 +1,3 @@
-// src/components/admin/TablaUsuarios.jsx
 import React from "react";
 
 export default function TablaUsuarios({ usuarios }) {
@@ -38,13 +37,11 @@ export default function TablaUsuarios({ usuarios }) {
                   className="btn btn-sm btn-outline-secondary me-1"
                   title="Editar"
                 >
-                  ✏️
                 </button>
                 <button
                   className="btn btn-sm btn-outline-danger"
                   title="Eliminar"
                 >
-                  🗑️
                 </button>
               </td>
             </tr>

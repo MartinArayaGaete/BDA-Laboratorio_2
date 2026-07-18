@@ -1,4 +1,3 @@
-// src/components/admin/TablaTorneos.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -31,13 +30,13 @@ export default function TablaTorneos({ torneos }) {
                   <span className={`badge ${estado.class}`}>{estado.text}</span>
                 </div>
                 <p className="text-muted small mb-2">
-                  📅 {torneo.fechaInicio} → {torneo.fechaTermino}
+                  {torneo.fechaInicio} → {torneo.fechaTermino}
                 </p>
                 <button
                   className="btn btn-outline-primary btn-sm w-100"
                   onClick={() => navigate(`/admin/torneos/${torneo.idTorneo}`)}
                 >
-                  👁 Gestionar Torneo
+                  Gestionar Torneo
                 </button>
               </div>
             </div>

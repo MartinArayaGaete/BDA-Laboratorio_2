@@ -1,4 +1,3 @@
-// src/components/admin/TablaCategorias.jsx
 import React, { useState } from "react";
 import categoriaService from "../../api/apiCategorias.js";
 

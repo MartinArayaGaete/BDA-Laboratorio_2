@@ -124,6 +124,6 @@ EXECUTE FUNCTION validar_restricciones_espaciales_participacion();
 
 ------------------- nueva funcion trigger ------------------------------
 CREATE TRIGGER trigger_validar_registro_puntaje
-BEFORE INSERT OR UPDATE ON puntaje
+BEFORE INSERT OR UPDATE ON puntaje_ronda
 FOR EACH ROW
 EXECUTE FUNCTION validar_registro_puntaje_fn();

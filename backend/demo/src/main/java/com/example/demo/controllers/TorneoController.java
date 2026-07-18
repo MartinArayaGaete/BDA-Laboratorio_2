@@ -189,4 +189,20 @@ public class TorneoController {
     public ResponseEntity<List<com.example.demo.dtos.LeaderboardDTO>> obtenerLeaderboard() {
         return ResponseEntity.ok(flechaService.obtenerLeaderboard());
     }
+
+    /**
+     * Obtiene los detalles de un torneo específico por su ID.
+     * GET /api/torneos/{idTorneo}
+     */
+    @GetMapping("/{idTorneo}")
+    public ResponseEntity<Torneo> obtenerTorneoPorId(@PathVariable Long idTorneo) {
+        try {
+            // OJO: Asumo que en TorneoService tienes un método llamado "obtenerPorId" o similar. 
+            // Si en tu servicio se llama "buscarPorId" o "findById", cámbialo aquí.
+            Torneo torneo = torneoService.obtenerPorId(idTorneo);
+            return ResponseEntity.ok(torneo);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
 }

@@ -14,7 +14,7 @@ import CategoriasView from "./views/admin/CategoriasView.jsx";
 import LogsView from "./views/admin/LogsView.jsx";
 
 // Vistas Arquero
-import ArcherDashboardView from "./views/archer/DashboardView.jsx";
+import ArcherDashboardView from "./views/archer/ArcherDashboardView.jsx";
 import TorneosView from "./views/archer/TorneosView.jsx";
 import HistorialView from "./views/archer/HistorialView.jsx";
 import EstadisticasView from "./views/archer/EstadisticasView.jsx";

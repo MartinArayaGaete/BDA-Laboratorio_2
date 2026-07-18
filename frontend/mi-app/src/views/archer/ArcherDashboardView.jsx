@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api";
+import api from "../../api/api";
 
 function ArcherDashboard() {
   const PAGE_SIZE = 6;
@@ -53,8 +53,8 @@ function ArcherDashboard() {
       const disponibles = Array.isArray(payload.content)
         ? payload.content
         : Array.isArray(payload.torneos)
-        ? payload.torneos
-        : [];
+          ? payload.torneos
+          : [];
       const totalPages = Number(payload.totalPages || 0);
 
       setTorneos(disponibles);
@@ -66,7 +66,9 @@ function ArcherDashboard() {
         return;
       }
       console.error("Error traer torneos:", err);
-      setErrorCarga("No se pudieron cargar los torneos. Revisa tu sesión o backend.");
+      setErrorCarga(
+        "No se pudieron cargar los torneos. Revisa tu sesión o backend.",
+      );
       setTorneos([]);
       setTorneosTotalPages(0);
     } finally {
@@ -86,7 +88,9 @@ function ArcherDashboard() {
       });
 
       const payload = resp.data || {};
-      const torneosPagina = Array.isArray(payload.torneos) ? payload.torneos : [];
+      const torneosPagina = Array.isArray(payload.torneos)
+        ? payload.torneos
+        : [];
       const totalPages = Number(payload.totalPages || 0);
 
       const torneosVisible = Array.isArray(torneosPagina) ? torneosPagina : [];
@@ -98,7 +102,9 @@ function ArcherDashboard() {
 
         rondas.forEach((ronda) => {
           const numeroRonda = ronda?.numeroRonda;
-          const flechasRonda = Array.isArray(ronda?.flechas) ? ronda.flechas : [];
+          const flechasRonda = Array.isArray(ronda?.flechas)
+            ? ronda.flechas
+            : [];
 
           flechasRonda.forEach((flecha) => {
             flechasDelTorneo.push({ ...flecha, numeroRonda });
@@ -118,7 +124,9 @@ function ArcherDashboard() {
         return;
       }
       console.error("Error traer historial:", err);
-      setErrorCarga("No se pudo cargar el historial. Revisa tu sesión o backend.");
+      setErrorCarga(
+        "No se pudo cargar el historial. Revisa tu sesión o backend.",
+      );
       setHistorial([]);
       setHistorialTotalPages(0);
       setFlechasPorTorneo({});
@@ -188,7 +196,9 @@ function ArcherDashboard() {
 
     // Validaciones
     if (torneo.estadoTorneo !== "NOT_STARTED") {
-      setErrorInscripcion(`El torneo debe estar en estado NOT_STARTED para inscribirse.`);
+      setErrorInscripcion(
+        `El torneo debe estar en estado NOT_STARTED para inscribirse.`,
+      );
       setTimeout(() => setErrorInscripcion(""), 3000);
       return;
     }
@@ -205,7 +215,11 @@ function ArcherDashboard() {
       });
 
       if (response.status === 201 || response.status === 200) {
-        await Promise.all([cargarTorneos(torneosPage), cargarHistorial(historialPage), cargarEstadisticas()]);
+        await Promise.all([
+          cargarTorneos(torneosPage),
+          cargarHistorial(historialPage),
+          cargarEstadisticas(),
+        ]);
         setInscribiendoTorneo(null);
       }
     } catch (err) {
@@ -225,7 +239,9 @@ function ArcherDashboard() {
 
     // Validaciones
     if (torneo.estadoTorneo !== "NOT_STARTED") {
-      setErrorDesinscripcion(`No puedes desinscribirse de un torneo que ya inició.`);
+      setErrorDesinscripcion(
+        `No puedes desinscribirse de un torneo que ya inició.`,
+      );
       setTimeout(() => setErrorDesinscripcion(""), 3000);
       return;
     }
@@ -233,13 +249,19 @@ function ArcherDashboard() {
     // Verificar si tiene flechas registradas
     const flechasDelTorneo = flechasPorTorneo[torneo.idTorneo] || [];
     if (flechasDelTorneo.length > 0) {
-      setErrorDesinscripcion(`No puedes desinscribirse: ya tienes flechas registradas en este torneo.`);
+      setErrorDesinscripcion(
+        `No puedes desinscribirse: ya tienes flechas registradas en este torneo.`,
+      );
       setTimeout(() => setErrorDesinscripcion(""), 3000);
       return;
     }
 
     // Confirmación
-    if (!window.confirm(`¿Estás seguro de que deseas desinscribirse de "${torneo.nombreTorneo}"?`)) {
+    if (
+      !window.confirm(
+        `¿Estás seguro de que deseas desinscribirse de "${torneo.nombreTorneo}"?`,
+      )
+    ) {
       return;
     }
 
@@ -255,7 +277,11 @@ function ArcherDashboard() {
       });
 
       if (response.status === 200) {
-        await Promise.all([cargarTorneos(torneosPage), cargarHistorial(historialPage), cargarEstadisticas()]);
+        await Promise.all([
+          cargarTorneos(torneosPage),
+          cargarHistorial(historialPage),
+          cargarEstadisticas(),
+        ]);
         setDesinscribiendoTorneo(null);
       }
     } catch (err) {
@@ -271,7 +297,10 @@ function ArcherDashboard() {
 
   const torneosArray = Array.isArray(torneos) ? torneos : [];
   const historialArray = Array.isArray(historial) ? historial : [];
-  const puntosMaximos = Math.max(...historialArray.map((item) => item.puntajeFinal || 0), 1);
+  const puntosMaximos = Math.max(
+    ...historialArray.map((item) => item.puntajeFinal || 0),
+    1,
+  );
   const stats = estadisticas || {};
 
   const torneosDisponibles = torneosArray;
@@ -285,7 +314,10 @@ function ArcherDashboard() {
 
     if (total === 0) {
       return (
-        <div className="d-flex align-items-center justify-content-center bg-light rounded-circle border mx-auto" style={{ width: 180, height: 180 }}>
+        <div
+          className="d-flex align-items-center justify-content-center bg-light rounded-circle border mx-auto"
+          style={{ width: 180, height: 180 }}
+        >
           <span className="text-muted">Sin datos</span>
         </div>
       );
@@ -293,14 +325,20 @@ function ArcherDashboard() {
 
     const aciertoPorcentaje = (acertadas / total) * 100;
     return (
-      <div className="position-relative mx-auto" style={{ width: 180, height: 180 }}>
+      <div
+        className="position-relative mx-auto"
+        style={{ width: 180, height: 180 }}
+      >
         <div
           className="rounded-circle w-100 h-100"
           style={{
             background: `conic-gradient(#28a745 0 ${aciertoPorcentaje}%, #dc3545 ${aciertoPorcentaje}% 100%)`,
           }}
         />
-        <div className="position-absolute top-50 start-50 translate-middle text-center bg-white rounded-circle d-flex flex-column justify-content-center align-items-center border" style={{ width: 110, height: 110 }}>
+        <div
+          className="position-absolute top-50 start-50 translate-middle text-center bg-white rounded-circle d-flex flex-column justify-content-center align-items-center border"
+          style={{ width: 110, height: 110 }}
+        >
           <strong className="fs-4">{stats.porcentajeAcierto}%</strong>
           <small className="text-muted">acierto</small>
         </div>
@@ -319,7 +357,11 @@ function ArcherDashboard() {
   return (
     <div className="container-fluid py-4 px-4">
       <h1 style={{ color: "#333" }}>Mi Perfil de Arquero</h1>
-      {usuario && <p className="text-muted">{usuario.nombre} (ID: {usuario.idUsuario})</p>}
+      {usuario && (
+        <p className="text-muted">
+          {usuario.nombre} (ID: {usuario.idUsuario})
+        </p>
+      )}
       {errorCarga && <div className="alert alert-danger">{errorCarga}</div>}
 
       <section className="mb-5">
@@ -357,8 +399,25 @@ function ArcherDashboard() {
               <h6 className="mb-3">Aciertos vs Fallos</h6>
               {renderPieGrafico()}
               <div className="d-flex justify-content-center gap-3 mt-3 small">
-                <span><span className="badge me-1" style={{ backgroundColor: "#28a745" }}>&nbsp;</span>Acertadas: {stats.flechasAcertadas}</span>
-                <span><span className="badge me-1" style={{ backgroundColor: "#dc3545" }}>&nbsp;</span>Fallidas: {Math.max(stats.totalFlechas - stats.flechasAcertadas, 0)}</span>
+                <span>
+                  <span
+                    className="badge me-1"
+                    style={{ backgroundColor: "#28a745" }}
+                  >
+                    &nbsp;
+                  </span>
+                  Acertadas: {stats.flechasAcertadas}
+                </span>
+                <span>
+                  <span
+                    className="badge me-1"
+                    style={{ backgroundColor: "#dc3545" }}
+                  >
+                    &nbsp;
+                  </span>
+                  Fallidas:{" "}
+                  {Math.max(stats.totalFlechas - stats.flechasAcertadas, 0)}
+                </span>
               </div>
             </div>
           </div>
@@ -367,7 +426,9 @@ function ArcherDashboard() {
             <div className="card p-3 h-100">
               <h6 className="mb-3">Puntos por Torneo</h6>
               {historialArray.length === 0 ? (
-                <div className="alert alert-light border mb-0">Todavía no hay torneos en el historial para graficar.</div>
+                <div className="alert alert-light border mb-0">
+                  Todavía no hay torneos en el historial para graficar.
+                </div>
               ) : (
                 <div className="d-flex flex-column gap-3">
                   {historialArray.map((item) => {
@@ -402,7 +463,10 @@ function ArcherDashboard() {
       <section className="mb-5">
         <h5 className="mb-3">Mi Historial</h5>
         {errorDesinscripcion && (
-          <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
             {errorDesinscripcion}
             <button
               type="button"
@@ -414,13 +478,18 @@ function ArcherDashboard() {
         {historialCargando ? (
           <div className="alert alert-info">Cargando...</div>
         ) : historial.length === 0 ? (
-          <div className="alert alert-warning">No hay torneos registrados aún.</div>
+          <div className="alert alert-warning">
+            No hay torneos registrados aún.
+          </div>
         ) : (
           <>
             <div className="row">
               {historialPaginado.map((item) => (
                 <div className="col-md-6 mb-3" key={item.idTorneo}>
-                  <div className="card p-3 shadow-sm" style={{ cursor: "pointer" }}>
+                  <div
+                    className="card p-3 shadow-sm"
+                    style={{ cursor: "pointer" }}
+                  >
                     <div className="d-flex justify-content-between align-items-start mb-2">
                       <div>
                         <h6 className="mb-1">{item.nombreTorneo}</h6>
@@ -429,22 +498,25 @@ function ArcherDashboard() {
                             item.estadoTorneo === "NOT_STARTED"
                               ? "bg-success"
                               : item.estadoTorneo === "IN_COURSE"
-                              ? "bg-warning text-dark"
-                              : "bg-secondary"
+                                ? "bg-warning text-dark"
+                                : "bg-secondary"
                           }`}
                         >
                           {item.estadoTorneo}
                         </span>
                       </div>
                       {item.estadoTorneo === "NOT_STARTED" &&
-                        (flechasPorTorneo[item.idTorneo] || []).length === 0 && (
+                        (flechasPorTorneo[item.idTorneo] || []).length ===
+                          0 && (
                           <button
                             className="btn btn-sm btn-danger ms-2"
                             onClick={() => handleDesinscribirse(item)}
                             disabled={desinscribiendoTorneo === item.idTorneo}
                             title="Desinscribirse de este torneo"
                           >
-                            {desinscribiendoTorneo === item.idTorneo ? "..." : "✕"}
+                            {desinscribiendoTorneo === item.idTorneo
+                              ? "..."
+                              : "✕"}
                           </button>
                         )}
                     </div>
@@ -454,36 +526,45 @@ function ArcherDashboard() {
                     <p className="mb-0">
                       Posición: <strong>{item.posicionFinal}°</strong>
                     </p>
-                      <details className="mt-2">
-                        <summary className="small" style={{ cursor: "pointer" }}>
-                          Ver flechas ({(flechasPorTorneo[item.idTorneo] || []).length})
-                        </summary>
-                        <div className="mt-2 small">
-                          {(() => {
-                            const flechasFor = flechasPorTorneo[item.idTorneo] || [];
-                            if (flechasFor.length === 0) return <div className="text-muted">Sin flechas registradas</div>;
-                            const agrupadas = flechasFor.reduce((acc, f) => {
-                              const r = f.numeroRonda || 0;
-                              if (!acc[r]) acc[r] = [];
-                              acc[r].push(f);
-                              return acc;
-                            }, {});
+                    <details className="mt-2">
+                      <summary className="small" style={{ cursor: "pointer" }}>
+                        Ver flechas (
+                        {(flechasPorTorneo[item.idTorneo] || []).length})
+                      </summary>
+                      <div className="mt-2 small">
+                        {(() => {
+                          const flechasFor =
+                            flechasPorTorneo[item.idTorneo] || [];
+                          if (flechasFor.length === 0)
+                            return (
+                              <div className="text-muted">
+                                Sin flechas registradas
+                              </div>
+                            );
+                          const agrupadas = flechasFor.reduce((acc, f) => {
+                            const r = f.numeroRonda || 0;
+                            if (!acc[r]) acc[r] = [];
+                            acc[r].push(f);
+                            return acc;
+                          }, {});
 
-                            return Object.keys(agrupadas)
-                              .sort((a, b) => Number(a) - Number(b))
-                              .map((r) => (
-                                <div key={r} className="mb-2">
-                                  <strong>Ronda {r}</strong>
-                                  <ul className="mb-0">
-                                    {agrupadas[r].map((f) => (
-                                      <li key={f.idFlecha}>Flecha {f.idFlecha}: {f.puntaje}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              ));
-                          })()}
-                        </div>
-                      </details>
+                          return Object.keys(agrupadas)
+                            .sort((a, b) => Number(a) - Number(b))
+                            .map((r) => (
+                              <div key={r} className="mb-2">
+                                <strong>Ronda {r}</strong>
+                                <ul className="mb-0">
+                                  {agrupadas[r].map((f) => (
+                                    <li key={f.idFlecha}>
+                                      Flecha {f.idFlecha}: {f.puntaje}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ));
+                        })()}
+                      </div>
+                    </details>
                   </div>
                 </div>
               ))}
@@ -495,7 +576,9 @@ function ArcherDashboard() {
                   <button
                     key={i}
                     className={`btn btn-sm me-1 ${
-                      i === historialPage ? "btn-primary" : "btn-outline-secondary"
+                      i === historialPage
+                        ? "btn-primary"
+                        : "btn-outline-secondary"
                     }`}
                     onClick={() => setHistorialPage(i)}
                   >
@@ -511,7 +594,10 @@ function ArcherDashboard() {
       <section className="mb-5">
         <h5 className="mb-3">Torneos Disponibles</h5>
         {errorInscripcion && (
-          <div className="alert alert-danger alert-dismissible fade show" role="alert">
+          <div
+            className="alert alert-danger alert-dismissible fade show"
+            role="alert"
+          >
             {errorInscripcion}
             <button
               type="button"
@@ -523,7 +609,9 @@ function ArcherDashboard() {
         {torneosCargando ? (
           <div className="alert alert-info">Cargando torneos...</div>
         ) : torneosDisponibles.length === 0 ? (
-          <div className="alert alert-warning">No hay torneos disponibles para inscripción.</div>
+          <div className="alert alert-warning">
+            No hay torneos disponibles para inscripción.
+          </div>
         ) : (
           <>
             <div className="row">
@@ -542,8 +630,8 @@ function ArcherDashboard() {
                               t.estadoTorneo === "NOT_STARTED"
                                 ? "bg-success"
                                 : t.estadoTorneo === "IN_COURSE"
-                                ? "bg-warning text-dark"
-                                : "bg-secondary"
+                                  ? "bg-warning text-dark"
+                                  : "bg-secondary"
                             }`}
                           >
                             {t.estadoTorneo}
@@ -556,7 +644,9 @@ function ArcherDashboard() {
                           onClick={() => handleInscribirse(t)}
                           disabled={inscribiendoTorneo === t.idTorneo}
                         >
-                          {inscribiendoTorneo === t.idTorneo ? "Inscribiendo..." : "Inscribirme"}
+                          {inscribiendoTorneo === t.idTorneo
+                            ? "Inscribiendo..."
+                            : "Inscribirme"}
                         </button>
                       )}
                     </div>
@@ -571,7 +661,9 @@ function ArcherDashboard() {
                   <button
                     key={i}
                     className={`btn btn-sm me-1 ${
-                      i === torneosPage ? "btn-primary" : "btn-outline-secondary"
+                      i === torneosPage
+                        ? "btn-primary"
+                        : "btn-outline-secondary"
                     }`}
                     onClick={() => setTorneosPage(i)}
                   >
@@ -595,4 +687,3 @@ function ArcherDashboard() {
 }
 
 export default ArcherDashboard;
-

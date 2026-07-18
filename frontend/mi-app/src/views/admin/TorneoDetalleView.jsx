@@ -1,202 +1,201 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import torneoService from "../../api/apiTorneos.js";
+import apiParticipaciones from "../../api/apiParticipaciones.js";
+import api from "../../api/api.js";
+import TorneoCabecera from "../../components/admin/TorneoCabecera.jsx";
+import ListaParticipantes from "../../components/admin/ListaParticipantes.jsx";
+import FormularioFlechas from "../../components/admin/FormularioFlechas.jsx";
+import Podio from "../../components/admin/Podio.jsx";
+import MapaTorneo from "../../components/admin/MapaTorneo.jsx";
 
 export default function TorneoDetalleView() {
   const { idTorneo } = useParams();
   const navigate = useNavigate();
-  
-  // Estados para el Torneo
+
   const [torneo, setTorneo] = useState(null);
-  const [loadingTorneo, setLoadingTorneo] = useState(true);
-  const [error, setError] = useState(null);
-
-  // Estados para los Arqueros Inscritos
   const [inscritos, setInscritos] = useState([]);
-  const [loadingInscritos, setLoadingInscritos] = useState(true);
+  const [rondas, setRondas] = useState([]);
+  const [podio, setPodio] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [mostrarMapa, setMostrarMapa] = useState(true);
 
-  // Función para recargar todo el contenido de la vista
-  const cargarTodo = () => {
-    setLoadingTorneo(true);
-    // 1. Llamada para obtener los detalles del torneo
-    fetch(`http://localhost:8080/api/torneos/${idTorneo}`, {
-      method: "GET",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" }
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al cargar los detalles del torneo");
-        return res.json();
-      })
-      .then((data) => {
-        setTorneo(data);
-        setLoadingTorneo(false);
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoadingTorneo(false);
-      });
+  const [usuarioSel, setUsuarioSel] = useState("");
+  const [rondaSel, setRondaSel] = useState("");
+  const [flechas, setFlechas] = useState(["", ""]);
+  const [guardandoPuntaje, setGuardandoPuntaje] = useState(false);
 
-    // 2. Llamada para obtener los arqueros inscritos
-    fetch(`http://localhost:8080/api/participaciones/torneo/${idTorneo}`, {
-      method: "GET",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" }
-    })
-      .then((res) => {
-        if (res.status === 204) return [];
-        if (!res.ok) throw new Error("Error al cargar los inscritos");
-        return res.json();
-      })
-      .then((data) => {
-        setInscritos(data);
-        setLoadingInscritos(false);
-      })
-      .catch((err) => {
-        console.error("Error cargando inscritos:", err);
-        setLoadingInscritos(false);
-      });
+  const cargarDatos = async () => {
+    try {
+      setLoading(true);
+      const todosTorneos = await torneoService.obtenerTodos();
+      const torneoActual = todosTorneos.find(
+        (t) => t.idTorneo === parseInt(idTorneo),
+      );
+
+      if (!torneoActual) {
+        navigate("/admin/torneos");
+        return;
+      }
+
+      setTorneo(torneoActual);
+
+      // Usar el nuevo endpoint que devuelve todo junto
+      const [datosCompletos, rondasData, podioData] = await Promise.all([
+        apiParticipaciones
+          .obtenerDatosCompletosTorneo(idTorneo)
+          .catch(() => null),
+        api
+          .get(`/rondas/torneo/${idTorneo}`)
+          .then((r) => r.data)
+          .catch(() => []),
+        torneoActual.estadoTorneo === "COMPLETED"
+          ? torneoService.obtenerPodio(idTorneo).catch(() => [])
+          : Promise.resolve([]),
+      ]);
+
+      // Los arqueros vienen con ubicacionArquero y ubicacionBlanco
+      setInscritos(datosCompletos?.arqueros || []);
+      setRondas(rondasData);
+      setPodio(podioData);
+    } catch (err) {
+      setError("Error al cargar los datos del torneo");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    cargarTodo();
+    cargarDatos();
   }, [idTorneo]);
 
-  // Función para llamar al endpoint de FINALIZAR torneo
-  const handleFinalizarTorneo = () => {
-    if (!window.confirm("¿Estás seguro de finalizar el torneo? Se calcularán las posiciones finales.")) return;
+  useEffect(() => {
+    if (usuarioSel && rondaSel && torneo?.estadoTorneo === "IN_COURSE") {
+      api
+        .get(
+          `/torneos/${idTorneo}/rondas/${rondaSel}/arqueros/${usuarioSel}/flechas`,
+        )
+        .then((res) => {
+          setFlechas(
+            res.data?.length
+              ? res.data.map((f) => f.puntaje.toString())
+              : ["", ""],
+          );
+        })
+        .catch(() => setFlechas(["", ""]));
+    } else {
+      setFlechas(["", ""]);
+    }
+  }, [usuarioSel, rondaSel]);
 
-    fetch(`http://localhost:8080/api/torneos/${idTorneo}/finalizar`, { 
-        method: "POST",
-        credentials: "include"
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const errorMsg = await res.text();
-          throw new Error(errorMsg);
-        }
-        alert("Torneo finalizado con éxito.");
-        cargarTodo(); // Recargamos la vista actual para ver el cambio de estado
-      })
-      .catch((err) => alert("Error: " + err.message));
+  const handleIniciarTorneo = async () => {
+    if (window.confirm("¿Iniciar torneo?")) {
+      try {
+        await torneoService.iniciarTorneo(idTorneo);
+        cargarDatos();
+      } catch (err) {
+        alert("Error al iniciar el torneo");
+      }
+    }
   };
 
-  const estado = torneo ? (torneo.estado_torneo || torneo.estadoTorneo) : "";
+  const handleFinalizarTorneo = async () => {
+    if (window.confirm("¿Finalizar torneo?")) {
+      try {
+        await torneoService.finalizarTorneo(idTorneo);
+        cargarDatos();
+      } catch (err) {
+        alert("Error al finalizar el torneo");
+      }
+    }
+  };
+
+  const handleGuardarPuntaje = async (e) => {
+    e.preventDefault();
+    const flechasInt = flechas.map((f) => parseInt(f));
+    if (flechasInt.some((f) => isNaN(f))) {
+      alert("Completa todos los valores (0-10)");
+      return;
+    }
+    setGuardandoPuntaje(true);
+    try {
+      await torneoService.registrarPuntajes(
+        idTorneo,
+        usuarioSel,
+        rondaSel,
+        flechasInt,
+      );
+      alert("Puntajes guardados correctamente");
+    } catch (err) {
+      alert("Error al guardar puntajes");
+    } finally {
+      setGuardandoPuntaje(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center mt-5">
+        <div className="spinner-border" role="status" />
+        <p className="mt-3 text-muted">Cargando detalles del torneo...</p>
+      </div>
+    );
+  }
+
+  if (!torneo) return null;
 
   return (
-    <div>
-      {/* Cabecera con botón de volver */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 style={{ color: "black", margin: 0 }}>📊 Detalles del Torneo #{idTorneo}</h2>
-        <button 
-          className="btn btn-secondary fw-bold" 
-          onClick={() => navigate("/admin/torneos")}
+    <div className="container-fluid py-3">
+      {error && <div className="alert alert-danger">{error}</div>}
+
+      <TorneoCabecera
+        torneo={torneo}
+        onIniciar={handleIniciarTorneo}
+        onFinalizar={handleFinalizarTorneo}
+        onVolver={() => navigate("/admin/torneos")}
+      />
+
+      {/* Botón para mostrar/ocultar mapa */}
+      <div className="mb-3">
+        <button
+          className="btn btn-outline-dark"
+          onClick={() => setMostrarMapa(!mostrarMapa)}
         >
-          ⬅ Volver a la lista
+          {mostrarMapa ? "🗺️ Ocultar Mapa" : "🗺️ Mostrar Mapa"}
         </button>
       </div>
 
-      {loadingTorneo && <div className="alert alert-info">⏳ Cargando detalles...</div>}
-      {error && <div className="alert alert-danger">❌ {error}</div>}
+      {/* Mapa del torneo */}
+      {mostrarMapa && <MapaTorneo torneo={torneo} inscritos={inscritos} />}
 
-      {!loadingTorneo && !error && torneo && (
-        <>
-          {/* Tarjeta de Información General */}
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">Información General</h5>
-              
-              {/* BOTÓN DE FINALIZAR DINÁMICO */}
-              {estado === 'IN_COURSE' && (
-                <button 
-                  className="btn btn-sm btn-danger fw-bold"
-                  onClick={handleFinalizarTorneo}
-                >
-                  ⏹️ Finalizar Torneo
-                </button>
-              )}
-            </div>
-            <div className="card-body">
-              <div className="row">
-                <div className="col-md-6 mb-3">
-                  <p className="text-muted mb-1">Nombre del Torneo</p>
-                  <h5 className="fw-semibold">{torneo.nombre_torneo || torneo.nombreTorneo}</h5>
-                </div>
-                <div className="col-md-6 mb-3">
-                  <p className="text-muted mb-1">Estado</p>
-                  <span className={`badge fs-6 ${
-                    estado === 'NOT_STARTED' ? 'bg-secondary' : 
-                    estado === 'IN_COURSE' ? 'bg-success' : 'bg-danger'
-                  }`}>
-                    {estado}
-                  </span>
-                </div>
-                <div className="col-md-6 mb-3">
-                  <p className="text-muted mb-1">Fecha de Inicio</p>
-                  <p className="fw-medium">{torneo.fecha_inicio || torneo.fechaInicio}</p>
-                </div>
-                <div className="col-md-6 mb-3">
-                  <p className="text-muted mb-1">Fecha de Término</p>
-                  <p className="fw-medium">{torneo.fecha_termino || torneo.fechaTermino || "N/A"}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className="row">
+        <div className="col-md-5">
+          <ListaParticipantes
+            inscritos={inscritos}
+            usuarioSel={usuarioSel}
+            estadoTorneo={torneo.estadoTorneo}
+            onSeleccionarUsuario={setUsuarioSel}
+          />
+        </div>
+        <div className="col-md-7">
+          <FormularioFlechas
+            torneo={torneo}
+            usuarioSel={usuarioSel}
+            rondas={rondas}
+            rondaSel={rondaSel}
+            setRondaSel={setRondaSel}
+            flechas={flechas}
+            setFlechas={setFlechas}
+            guardandoPuntaje={guardandoPuntaje}
+            onGuardarPuntaje={handleGuardarPuntaje}
+          />
+        </div>
+      </div>
 
-          {/* Tarjeta de Participantes */}
-          <div className="card shadow-sm border-0">
-            <div className="card-header bg-warning text-dark fw-bold d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">🏹 Arqueros Inscritos</h5>
-              <span className="badge bg-dark text-white">{inscritos.length} inscritos</span>
-            </div>
-            
-            <div className="card-body p-0">
-              {loadingInscritos ? (
-                <div className="p-4 text-center text-muted">Cargando arqueros...</div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover align-middle mb-0">
-                    <thead className="table-light">
-                      <tr>
-                        <th>ID Usuario</th>
-                        <th>RUT</th>
-                        <th>Nombre</th>
-                        <th>Ubic. Arquero</th>
-                        <th>Ubic. Blanco</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {inscritos.length === 0 ? (
-                        <tr>
-                          <td colSpan="5" className="text-center py-4 text-muted">
-                            No hay arqueros inscritos en este torneo aún.
-                          </td>
-                        </tr>
-                      ) : (
-                        inscritos.map((arquero) => (
-                          <tr key={arquero.idParticipacion}>
-                            <td className="fw-medium text-muted">#{arquero.idUsuario}</td>
-                            <td>{arquero.rut}</td>
-                            <td className="fw-semibold">{arquero.nombre}</td>
-                            <td>
-                              <span className="badge bg-info text-dark">
-                                {arquero.ubicacionArquero || "-"}
-                              </span>
-                            </td>
-                            <td>
-                              <span className="badge bg-info text-dark">
-                                {arquero.ubicacionBlanco || "-"}
-                              </span>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        </>
+      {torneo.estadoTorneo === "COMPLETED" && podio.length > 0 && (
+        <Podio podio={podio} />
       )}
     </div>
   );

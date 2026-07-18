@@ -42,15 +42,15 @@ BEGIN
         END IF;
     END IF;
 
-    -- 3. SEGURIDAD: Validar separación mínima entre arqueros (1.5 metros)
+    -- 3. SEGURIDAD: Validar separación mínima entre arqueros (5 metros)
     SELECT COUNT(*) INTO v_arqueros_cercanos
     FROM participacion
     WHERE id_torneo = NEW.id_torneo
       AND id_usuario <> NEW.id_usuario
-      AND ST_DistanceSphere(ubicacion_arquero, NEW.ubicacion_arquero) < 1.5;
+      AND ST_DistanceSphere(ubicacion_arquero, NEW.ubicacion_arquero) < 5;
 
     IF v_arqueros_cercanos > 0 THEN
-        RAISE EXCEPTION 'ALERTA SEGURIDAD: Hay otro arquero muy cerca en este puesto de tiro (Separación mínima: 1.5m).';
+        RAISE EXCEPTION 'ALERTA SEGURIDAD: Hay otro arquero muy cerca en este puesto de tiro (Separación mínima: 5m).';
     END IF;
 
     RETURN NEW;

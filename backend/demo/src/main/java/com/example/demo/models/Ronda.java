@@ -9,6 +9,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class Ronda {
     private Long idRonda;
-    private Long idTorneo; // FK
+    private Long idTorneo;
     private Integer numeroRonda;
+    private Long idZonaAmbiental;
 }

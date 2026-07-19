@@ -117,6 +117,10 @@ CREATE TABLE IF NOT EXISTS sectores_ambientales (
         ON DELETE CASCADE
 );
 
+ALTER TABLE ronda
+ADD COLUMN IF NOT EXISTS id_zona_ambiental BIGINT,
+ADD FOREIGN KEY (id_zona_ambiental) REFERENCES sectores_ambientales(id_zona_ambiental);
+
 -- 3. ÍNDICES TRADICIONALES (B-Tree)
 CREATE INDEX idx_torneo_categoria ON torneo(id_categoria);
 CREATE INDEX idx_participacion_usuario ON participacion(id_usuario);

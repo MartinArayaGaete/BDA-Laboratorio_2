@@ -27,18 +27,17 @@ public class EstadisticasRepository {
     }
 
     public List<EstadisticaAmbientalDTO> obtenerCorrelacionClimatica() {
-        // la consulta SQL que calcula la correlación entre las condiciones climáticas y el desempeño de los arqueros
         String sql = """
             SELECT 
-                ca.categoria_ambiental AS condicion_climatica,
-                COUNT(pr.id_puntaje_ronda) AS total_flechas,
-                ROUND(AVG(pr.puntaje_ronda), 2) AS promedio_puntaje,
-                COALESCE(ROUND(STDDEV_SAMP(pr.puntaje_ronda), 2), 0) AS desviacion_precision 
-            FROM puntaje_ronda pr
-            JOIN sectores_ambientales sa 
-                ON ST_Intersects(pr.posicion_diana, sa.territorio)
-            JOIN categoria_ambiental ca 
-                ON sa.id_categoria_ambiental = ca.id_categoria_ambiental
+                COALESCE(ca.categoria_ambiental, 'Sin datos ambientales') AS condicion_climatica,
+                COUNT(f.id_flecha) AS total_flechas,
+                ROUND(AVG(f.puntaje)::numeric, 2) AS promedio_puntaje,
+                COALESCE(ROUND(STDDEV_SAMP(f.puntaje)::numeric, 2), 0) AS desviacion_precision
+            FROM ronda r
+            LEFT JOIN sectores_ambientales sa ON r.id_zona_ambiental = sa.id_zona_ambiental
+            LEFT JOIN categoria_ambiental ca ON sa.id_categoria_ambiental = ca.id_categoria_ambiental
+            JOIN puntaje_ronda pr ON pr.id_ronda = r.id_ronda
+            JOIN flecha f ON f.id_puntaje_ronda = pr.id_puntaje_ronda
             GROUP BY ca.categoria_ambiental
             ORDER BY promedio_puntaje DESC
         """;

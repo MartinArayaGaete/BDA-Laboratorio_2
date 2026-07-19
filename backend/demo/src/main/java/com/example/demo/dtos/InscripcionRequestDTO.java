@@ -10,6 +10,4 @@ import lombok.NoArgsConstructor;
 public class InscripcionRequestDTO {
     private Long idTorneo;
     private Long idUsuario;
-    private String ubicacionArquero; // GeoJSON
-    private String ubicacionBlanco;  // GeoJSON
 }

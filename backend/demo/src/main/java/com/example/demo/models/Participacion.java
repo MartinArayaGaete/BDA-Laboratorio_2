@@ -13,7 +13,5 @@ public class Participacion {
     private Long idTorneo;  // FK
     private Integer puntajeFinal;
     private Integer posicionFinal;
-    private String ubicacionArquero; // geometria punto
-    private String ubicacionBlanco;  // geometria punto
-
+    // decidimos quitar la posición del arquero y diana de participación y pasar a que sea en puntaje ronda.
 }

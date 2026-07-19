@@ -13,5 +13,5 @@ public class ResumenTorneoArqueroDTO {
     private Integer totalFlechas;
     private Double promedioPuntos;
     private Integer rondasJugadas;
-    private String factorAmbiental;
+    private String factoresAmbientales;
 }

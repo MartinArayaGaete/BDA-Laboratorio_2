@@ -20,10 +20,10 @@ public class ParticipacionRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void inscribirUsuario(Long idUsuario, Long idTorneo, String ubicacionArquero, String ubicacionBlanco) {
-        String sql = "INSERT INTO participacion (id_usuario, id_torneo, ubicacion_arquero, ubicacion_blanco) " +
-                "VALUES (?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ST_SetSRID(ST_GeomFromGeoJSON(?), 4326))";
-        jdbcTemplate.update(sql, idUsuario, idTorneo, ubicacionArquero, ubicacionBlanco);
+    // le quitamos los geo de posicion arq y diana
+    public void inscribirUsuario(Long idUsuario, Long idTorneo) {
+        String sql = "INSERT INTO participacion (id_usuario, id_torneo) VALUES (?, ?)";
+        jdbcTemplate.update(sql, idUsuario, idTorneo);
     }
 
     public boolean existeParticipacion(Long idUsuario, Long idTorneo) {
@@ -170,23 +170,38 @@ public class ParticipacionRepository {
     }
 
     /**
-     * Obtiene un resumen agregado por torneo y arquero en una sola consulta.
-     * Retorna keys: puntaje_final, posicion_final, total_flechas, promedio_puntos, rondas_jugadas
+     *
+     * PROPUESTA (requisito estadisticas desempeño/
+     *
+     * Obtiene el resumen de rendimiento de un arquero en un torneo específico.
+     * Calcula:
+     *  * - Puntaje final y posición en el torneo
+     *  * - Total de flechas lanzadas y promedio de puntos
+     *  * - Cantidad de rondas jugadas
+     *  * - Condiciones climáticas encontradas durante el torneo
      */
     public Optional<Map<String, Object>> obtenerResumenPorTorneoYUsuario(Long idTorneo, Long idUsuario) {
         String sql = """
-        SELECT p.puntaje_final,
-               p.posicion_final,
-               COUNT(f.id_flecha) AS total_flechas,
-               COALESCE(ROUND(AVG(f.puntaje)::numeric, 2), 0) AS promedio_puntos,
-               COUNT(DISTINCT pr.id_ronda) AS rondas_jugadas,
-               obtener_clima_arquero(p.id_participacion) AS factor_ambiental -- <-- NUEVO CAMPO
-        FROM participacion p
-        LEFT JOIN puntaje_ronda pr ON pr.id_participacion = p.id_participacion
-        LEFT JOIN flecha f ON f.id_puntaje_ronda = pr.id_puntaje_ronda
-        WHERE p.id_torneo = ? AND p.id_usuario = ?
-        GROUP BY p.id_participacion, p.puntaje_final, p.posicion_final
-        """;
+    SELECT p.puntaje_final,
+           p.posicion_final,
+           COUNT(f.id_flecha) AS total_flechas,
+           COALESCE(ROUND(AVG(f.puntaje)::numeric, 2), 0) AS promedio_puntos,
+           COUNT(DISTINCT pr.id_ronda) AS rondas_jugadas,
+           COALESCE(
+               (SELECT ca.categoria_ambiental
+                FROM torneo t
+                JOIN sectores_ambientales sa ON ST_Intersects(t.geom_zona_competencia, sa.territorio)
+                JOIN categoria_ambiental ca ON sa.id_categoria_ambiental = ca.id_categoria_ambiental
+                WHERE t.id_torneo = p.id_torneo
+                LIMIT 1),
+               'Sin categoría ambiental'
+           ) AS factor_ambiental
+    FROM participacion p
+    LEFT JOIN puntaje_ronda pr ON pr.id_participacion = p.id_participacion
+    LEFT JOIN flecha f ON f.id_puntaje_ronda = pr.id_puntaje_ronda
+    WHERE p.id_torneo = ? AND p.id_usuario = ?
+    GROUP BY p.id_participacion, p.puntaje_final, p.posicion_final
+    """;
 
         List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, idTorneo, idUsuario);
         if (result.isEmpty()) {

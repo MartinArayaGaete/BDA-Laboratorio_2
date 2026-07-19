@@ -33,9 +33,7 @@ public class ParticipacionController {
             // Pasamos los 4 argumentos requeridos extrayéndolos del DTO
             participacionService.inscribirUsuario(
                     request.getIdUsuario(),
-                    request.getIdTorneo(),
-                    request.getUbicacionArquero(),
-                    request.getUbicacionBlanco()
+                    request.getIdTorneo()
             );
             return ResponseEntity.status(HttpStatus.CREATED).body("Arquero inscrito exitosamente");
         } catch (org.springframework.web.server.ResponseStatusException e) {

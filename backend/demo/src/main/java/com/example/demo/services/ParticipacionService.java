@@ -27,38 +27,22 @@ public class ParticipacionService {
         this.torneoRepository = torneoRepository;
     }
 
+    // Le quitamos la posición de arquero y diana, tambien la validación de posición que esperaba al trigger.
     @Transactional
-    public void inscribirUsuario(Long idUsuario, Long idTorneo, String ubicacionArquero, String ubicacionBlanco) {
-        // Obtener el torneo para revisar su estado
+    public void inscribirUsuario(Long idUsuario, Long idTorneo) {
         Torneo torneo = torneoRepository.buscarPorId(idTorneo)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
 
-        // Si no está en 'NOT_STARTED', no puede entrar
         if (!"NOT_STARTED".equals(torneo.getEstadoTorneo())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Las inscripciones están cerradas. El torneo ya está en curso o finalizado.");
         }
 
-        // Verificar si ya estaba inscrito
         if (participacionRepository.existeParticipacion(idUsuario, idTorneo)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El arquero ya está inscrito en este torneo");
         }
 
-        try {
-            participacionRepository.inscribirUsuario(idUsuario, idTorneo, ubicacionArquero, ubicacionBlanco);
-        } catch (org.springframework.dao.DataAccessException e) {
-            // Extraemos la causa raíz del error de PostgreSQL
-            String mensajeError = e.getRootCause() != null ? e.getRootCause().getMessage() : "Error de base de datos";
-
-            // Mapear los errores del Trigger a las respuestas HTTP correctas
-            if (mensajeError.contains("LÍMITE EXCEDIDO")) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, mensajeError);
-            } else if (mensajeError.contains("ALERTA SEGURIDAD")) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, mensajeError);
-            }
-
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error inesperado: " + mensajeError);
-        }
+        participacionRepository.inscribirUsuario(idUsuario, idTorneo);
     }
 
     @Transactional
@@ -102,6 +86,10 @@ public class ParticipacionService {
         return participacionRepository.obtenerTodas();
     }
 
+    /**
+     * Obtiene el resumen de rendimiento de un arquero en un torneo.
+     * Incluye factores ambientales encontrados durante las rondas.
+     */
     public ResumenTorneoArqueroDTO obtenerResumenPorTorneoYUsuario(Long idTorneo, Long idUsuario) {
         Map<String, Object> resumen = participacionRepository.obtenerResumenPorTorneoYUsuario(idTorneo, idUsuario)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -127,9 +115,9 @@ public class ParticipacionService {
                 ? 0
                 : ((Number) resumen.get("rondas_jugadas")).intValue();
 
-        String factorAmbiental = resumen.get("factor_ambiental") == null
-                ? "Despejado / Sin Alteraciones"
-                : (String) resumen.get("factor_ambiental");
+        String factoresAmbientales = resumen.get("factores_ambientales") == null
+                ? "Sin datos ambientales"
+                : (String) resumen.get("factores_ambientales");
 
         return new ResumenTorneoArqueroDTO(
                 puntajeFinal,
@@ -137,7 +125,7 @@ public class ParticipacionService {
                 totalFlechas,
                 promedioPuntos,
                 rondasJugadas,
-                factorAmbiental
+                factoresAmbientales
         );
     }
 

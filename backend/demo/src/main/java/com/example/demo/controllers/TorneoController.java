@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.demo.dtos.ZonaAmbientalDTO;
+
 import java.util.List;
 import java.util.Map;
 
@@ -193,7 +195,7 @@ public class TorneoController {
     // obtiene los climas asociados a un torneo específico
     @GetMapping("/{id}/climas")
     public ResponseEntity<List<String>> obtenerClimasDeTorneo(@PathVariable Long id) {
-        List<String> climas = service.obtenerClimasPorTorneo(id);
+        List<String> climas = torneoService.obtenerClimasPorTorneo(id);
         return ResponseEntity.ok(climas);
     }
 }

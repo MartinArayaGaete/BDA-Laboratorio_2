@@ -1,22 +1,31 @@
 -- ============================================
 -- 06-StoredProced_geo.sql
--- Función: Obtener factor climático/ambiental del arquero
--- Análisis Espacial de Desempeño
+-- Función: Obtener categoría ambiental
+-- del sector donde se encuentra el arquero
 -- ============================================
 
-CREATE OR REPLACE FUNCTION obtener_clima_arquero(p_id_participacion BIGINT)
+CREATE OR REPLACE FUNCTION obtener_categoria_ambiental(
+    p_id_puntaje_ronda BIGINT
+)
 RETURNS VARCHAR(80) AS $$
 DECLARE
-    v_tipo_clima VARCHAR(80);
+    v_categoria VARCHAR(80);
 BEGIN
-    -- Detectar si el arquero está dentro de una zona ambiental
-    SELECT za.tipo INTO v_tipo_clima
-    FROM participacion p
-    JOIN zona_ambiental za ON ST_Intersects(za.geom_area, p.ubicacion_arquero)
-    WHERE p.id_participacion = p_id_participacion
+
+    -- Obtener la categoría ambiental del sector
+    -- donde se encuentra la posición del arquero
+
+    SELECT ca.categoria_ambiental
+    INTO v_categoria
+    FROM puntaje_ronda pr
+    JOIN sectores_ambientales sa
+        ON ST_Intersects(sa.territorio, pr.posicion_arquero)
+    JOIN categoria_ambiental ca
+        ON sa.id_categoria_ambiental = ca.id_categoria_ambiental
+    WHERE pr.id_puntaje_ronda = p_id_puntaje_ronda
     LIMIT 1;
 
-    -- Retornar el tipo de clima o "Despejado" por defecto
-    RETURN COALESCE(v_tipo_clima, 'Despejado / Sin Alteraciones');
+    RETURN COALESCE(v_categoria, 'Sin categoría ambiental');
+
 END;
 $$ LANGUAGE plpgsql;

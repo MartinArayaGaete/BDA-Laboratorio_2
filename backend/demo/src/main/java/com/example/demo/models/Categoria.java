@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class Categoria {
     private Long idCategoria;
     private String nombreCategoria;
+    private Integer distanciaTiro;
 }

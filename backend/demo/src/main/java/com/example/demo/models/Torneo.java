@@ -16,4 +16,5 @@ public class Torneo {
     private LocalDate fechaInicio;
     private LocalDate fechaTermino;
     private String geomZonaCompetencia; // Geometria poligono
+    private String lineaTiro; // Geometria LineString
 }

@@ -159,4 +159,9 @@ public class TorneoService {
             );
         }
     }
+
+    // Método para obtener los climas asociados a un torneo específico
+    public List<String> obtenerClimasPorTorneo(Long idTorneo) {
+    return repository.obtenerClimasPorTorneo(idTorneo);
+    }
 }

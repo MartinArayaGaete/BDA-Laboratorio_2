@@ -148,4 +148,18 @@ public class TorneoRepository {
         int offset = page * size;
         return jdbcTemplate.queryForList(sql, idUsuario, size, offset);
     }
+
+
+    // NUEVO: Obtiene los climas asociados a un torneo específico
+    public List<String> obtenerClimasPorTorneo(Long idTorneo) {
+    String sql = """
+        SELECT DISTINCT ca.categoria_ambiental
+        FROM torneo t
+        JOIN sectores_ambientales sa ON ST_Intersects(t.geom_zona_competencia, sa.territorio)
+        JOIN categoria_ambiental ca ON sa.id_categoria_ambiental = ca.id_categoria_ambiental
+        WHERE t.id_torneo = ?
+    """;
+
+    return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("categoria_ambiental"), idTorneo);
+    }
 }

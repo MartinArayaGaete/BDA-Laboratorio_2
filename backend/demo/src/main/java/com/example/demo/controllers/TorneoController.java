@@ -189,4 +189,11 @@ public class TorneoController {
     public ResponseEntity<List<com.example.demo.dtos.LeaderboardDTO>> obtenerLeaderboard() {
         return ResponseEntity.ok(flechaService.obtenerLeaderboard());
     }
+
+    // obtiene los climas asociados a un torneo específico
+    @GetMapping("/{id}/climas")
+    public ResponseEntity<List<String>> obtenerClimasDeTorneo(@PathVariable Long id) {
+        List<String> climas = service.obtenerClimasPorTorneo(id);
+        return ResponseEntity.ok(climas);
+    }
 }

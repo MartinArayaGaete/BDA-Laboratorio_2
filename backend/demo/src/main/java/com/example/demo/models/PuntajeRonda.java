@@ -12,4 +12,6 @@ public class PuntajeRonda {
     private Long idRonda;           // FK
     private Long idParticipacion;   // FK
     private Integer puntajeRonda;
+    private String posicionArquero;
+    private String posicionDiana;
 }

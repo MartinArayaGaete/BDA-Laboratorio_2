@@ -57,11 +57,6 @@ CREATE TABLE IF NOT EXISTS torneo (
     FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria)
 );
 
-CREATE TABLE IF NOT EXISTS zona_ambiental (
-    id_zona BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    tipo VARCHAR(80) NOT NULL,
-    geom_area GEOMETRY(Polygon, 4326)
-);
 
 CREATE TABLE IF NOT EXISTS participacion (
     id_participacion BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -114,8 +109,12 @@ CREATE TABLE IF NOT EXISTS categoria_ambiental (
 
 CREATE TABLE IF NOT EXISTS sectores_ambientales (
     id_zona_ambiental BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    FOREIGN KEY (id_categoria_ambiental) REFERENCES categoria_ambiental(id_categoria_ambiental) ON DELETE CASCADE,
-    territorio GEOMETRY(Polygon, 4326)
+    id_categoria_ambiental BIGINT NOT NULL,
+    territorio GEOMETRY(Polygon,4326),
+
+    FOREIGN KEY (id_categoria_ambiental)
+        REFERENCES categoria_ambiental(id_categoria_ambiental)
+        ON DELETE CASCADE
 );
 
 -- 3. ÍNDICES TRADICIONALES (B-Tree)

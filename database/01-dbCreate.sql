@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS usuario (
 
 CREATE TABLE IF NOT EXISTS categoria (
     id_categoria BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    nombre_categoria VARCHAR(80) NOT NULL
+    nombre_categoria VARCHAR(80) NOT NULL,
+    distancia_tiro INT 
 );
 
 CREATE TABLE IF NOT EXISTS logs (
@@ -68,8 +69,6 @@ CREATE TABLE IF NOT EXISTS participacion (
     id_torneo BIGINT NOT NULL,
     puntaje_final INT,
     posicion_final INT,
-    ubicacion_arquero GEOMETRY(Point, 4326),
-    ubicacion_blanco GEOMETRY(Point, 4326),
     FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario) ON DELETE CASCADE,
     FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
 );
@@ -85,10 +84,21 @@ CREATE TABLE IF NOT EXISTS puntaje_ronda (
     id_puntaje_ronda BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_ronda BIGINT NOT NULL,
     id_participacion BIGINT NOT NULL,
+
     puntaje_ronda INT,
-    CONSTRAINT unique_ronda_participacion UNIQUE (id_ronda, id_participacion),
-    FOREIGN KEY (id_ronda) REFERENCES ronda(id_ronda) ON DELETE CASCADE,
-    FOREIGN KEY (id_participacion) REFERENCES participacion(id_participacion) ON DELETE CASCADE
+
+    posicion_arquero GEOMETRY(Point,4326),
+    posicion_diana GEOMETRY(Point,4326),
+
+    CONSTRAINT unique_ronda_participacion UNIQUE (id_ronda,id_participacion),
+
+    FOREIGN KEY (id_ronda)
+        REFERENCES ronda(id_ronda)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (id_participacion)
+        REFERENCES participacion(id_participacion)
+        ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS flecha (
@@ -96,6 +106,16 @@ CREATE TABLE IF NOT EXISTS flecha (
     id_puntaje_ronda BIGINT NOT NULL,
     puntaje INT NOT NULL,
     FOREIGN KEY (id_puntaje_ronda) REFERENCES puntaje_ronda(id_puntaje_ronda) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS categoria_ambiental (
+    id_categoria_ambiental BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    categoria_ambiental VARCHAR(80) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sectores_ambientales (
+    id_zona_ambiental BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    FOREIGN KEY (id_categoria_ambiental) REFERENCES categoria_ambiental(id_categoria_ambiental) ON DELETE CASCADE,
+    territorio GEOMETRY(Polygon, 4326)
 );
 
 -- 3. ÍNDICES TRADICIONALES (B-Tree)

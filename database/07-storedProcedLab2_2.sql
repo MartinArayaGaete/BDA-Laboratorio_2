@@ -1,29 +1,38 @@
 -- ============================================
 -- 07-StoredProced_geo.sql
--- Función: Calcular distancia real entre arquero y blanco
--- Validación de normativas de distancia por categoría
+-- Funciones Geoespaciales
+-- Cálculo de distancia entre arquero y diana
+-- Validación de normativas por categoría
 -- ============================================
 
-CREATE OR REPLACE FUNCTION calcular_distancia_tiro(p_id_participacion BIGINT)
+-- ============================================
+-- Calcular distancia real entre arquero y diana
+-- ============================================
+
+CREATE OR REPLACE FUNCTION calcular_distancia_tiro(p_id_puntaje_ronda BIGINT)
 RETURNS FLOAT AS $$
 DECLARE
     v_distancia FLOAT;
 BEGIN
-    -- Calcular distancia en metros entre arquero y su blanco asignado
     SELECT ST_Distance(
-        p.ubicacion_arquero::geography,
-        p.ubicacion_blanco::geography
-    ) INTO v_distancia
-    FROM participacion p
-    WHERE p.id_participacion = p_id_participacion;
+        pr.posicion_arquero::geography,
+        pr.posicion_diana::geography
+    )
+    INTO v_distancia
+    FROM puntaje_ronda pr
+    WHERE pr.id_puntaje_ronda = p_id_puntaje_ronda;
 
     RETURN ROUND(v_distancia::numeric, 2);
 END;
 $$ LANGUAGE plpgsql;
 
 
+-- ============================================
+-- Validar una distancia máxima recibida como parámetro
+-- ============================================
+
 CREATE OR REPLACE FUNCTION validar_distancia_categoria(
-    p_id_participacion BIGINT,
+    p_id_puntaje_ronda BIGINT,
     p_distancia_maxima FLOAT DEFAULT 90.0
 )
 RETURNS BOOLEAN AS $$
@@ -31,20 +40,29 @@ DECLARE
     v_distancia FLOAT;
     v_categoria VARCHAR(80);
 BEGIN
-    -- Obtener la distancia real
-    v_distancia := calcular_distancia_tiro(p_id_participacion);
 
-    -- Obtener la categoría del torneo
-    SELECT c.nombre_categoria INTO v_categoria
-    FROM participacion p
-    JOIN torneo t ON p.id_torneo = t.id_torneo
-    JOIN categoria c ON t.id_categoria = c.id_categoria
-    WHERE p.id_participacion = p_id_participacion;
+    -- Obtener distancia real
+    v_distancia := calcular_distancia_tiro(p_id_puntaje_ronda);
 
-    -- Validar distancia según categoría
+    -- Obtener categoría del torneo
+    SELECT c.nombre_categoria
+    INTO v_categoria
+    FROM puntaje_ronda pr
+    JOIN participacion p
+        ON pr.id_participacion = p.id_participacion
+    JOIN torneo t
+        ON p.id_torneo = t.id_torneo
+    JOIN categoria c
+        ON t.id_categoria = c.id_categoria
+    WHERE pr.id_puntaje_ronda = p_id_puntaje_ronda;
+
+    -- Validar distancia
     IF v_distancia > p_distancia_maxima THEN
-        RAISE EXCEPTION 'DISTANCIA EXCEDIDA: % metros (Máximo permitido: % metros para categoría %)',
-                        v_distancia, p_distancia_maxima, v_categoria;
+        RAISE EXCEPTION
+        'DISTANCIA EXCEDIDA: % metros (Máximo permitido: % metros para categoría %)',
+        v_distancia,
+        p_distancia_maxima,
+        v_categoria;
     END IF;
 
     RETURN TRUE;
@@ -52,54 +70,51 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-----------------------------------------------------------------
+-- ============================================
+-- Validar normativa oficial de la categoría
+-- ============================================
 
--- SE AGREGA NUEVA COLUMNA A LA TABLA CATEGORIA PARA ALMACENAR LA DISTANCIA OFICIAL DE TIRO
-ALTER TABLE categoria ADD COLUMN IF NOT EXISTS distacia_oficial FLOAT;
-
--- registro de las normativas oficiales de distancia por categoría
-UPDATE categoria SET distacia_oficial = 70.0 WHERE nombre_categoria = 'Recurvo';
-UPDATE categoria SET distacia_oficial = 50.0 WHERE nombre_categoria = 'Compuesto';
-UPDATE categoria SET distacia_oficial = 40.0 WHERE nombre_categoria = 'Tradicional';
-UPDATE categoria SET distacia_oficial = 30.0 WHERE nombre_categoria = 'Infantil';
-
--- Funcion para calcular distancia y validad normativas
-CREATE OR REPLACE FUNCTION validar_normativa_distancia_categoria(p_id_participacion BIGINT)
+CREATE OR REPLACE FUNCTION validar_normativa_distancia_categoria(
+    p_id_puntaje_ronda BIGINT
+)
 RETURNS BOOLEAN AS $$
 DECLARE
     v_distancia_real FLOAT;
-    v_distancia_oficial FLOAT;  
+    v_distancia_oficial INT;
     v_categoria_nombre VARCHAR(80);
-    
 BEGIN
-    -- obtener la distancia requerida parametrizada y el nombre de categoria
-    SELECT c.distacia_oficial, c.nombre_categoria
-    INTO v_distancia_oficial, v_categoria_nombre
-    FROM participacion p
-    JOIN torneo t ON p.id_torneo = t.id_torneo
-    JOIN categoria c ON t.id_categoria = c.id_categoria
-    WHERE p.id_participacion = p_id_participacion;
 
-    -- si no hay distancia configurada, se asume que no hay restricción
+    -- Obtener distancia oficial configurada para la categoría
+    SELECT c.distancia_tiro,
+           c.nombre_categoria
+    INTO v_distancia_oficial,
+         v_categoria_nombre
+    FROM puntaje_ronda pr
+    JOIN participacion p
+        ON pr.id_participacion = p.id_participacion
+    JOIN torneo t
+        ON p.id_torneo = t.id_torneo
+    JOIN categoria c
+        ON t.id_categoria = c.id_categoria
+    WHERE pr.id_puntaje_ronda = p_id_puntaje_ronda;
+
+    -- Si la categoría no tiene distancia configurada
     IF v_distancia_oficial IS NULL THEN
         RETURN TRUE;
     END IF;
 
-    -- calcular distancia real usando geografia
-    SELECT ST_Distance(
-        p.ubicacion_arquero::geography,
-        p.ubicacion_blanco::geography
-    ) INTO v_distancia_real
-    FROM participacion p
-    WHERE p.id_participacion = p_id_participacion;
+    -- Calcular distancia real entre arquero y diana
+    v_distancia_real := calcular_distancia_tiro(p_id_puntaje_ronda);
 
-    -- verificar que la distancia real no exceda la distancia oficial
+    -- Validar normativa
     IF v_distancia_real > v_distancia_oficial THEN
-        RAISE EXCEPTION 'INCUMPLIMIENTO NORMATIVA: % metros (Máximo permitido: % metros para categoría %)',
-                        ROUND(v_distancia_real::numeric, 2), v_distancia_oficial, v_categoria_nombre;
+        RAISE EXCEPTION
+        'INCUMPLIMIENTO NORMATIVA: % metros (Máximo permitido: % metros para categoría %)',
+        ROUND(v_distancia_real::numeric, 2),
+        v_distancia_oficial,
+        v_categoria_nombre;
     END IF;
 
     RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql;
-    

@@ -18,7 +18,7 @@ body {
 .bg-light h6,
 .bg-light p,
 .bg-light label,
-.bg-light span:not(.badge):not(.text-white):not([class*="text-"]) {
+.bg-light span:not(.badge):not(.text-white):not(.text-*) {
   color: #212529 !important;
 }
 

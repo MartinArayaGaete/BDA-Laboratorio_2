@@ -70,17 +70,19 @@ public class FlechaRepository {
         jdbcTemplate.update(sql, idParticipacion, idRonda, puntaje);
     }
 
-    // Ejecuta el Procedimiento Almacenado 1 de PostgreSQL
-    public void guardarRondaCompletaSP(Long idRonda, Long idParticipacion, List<Integer> flechas, Long idAdmin) {
+    public void guardarRondaCompletaSP(Long idRonda, Long idParticipacion,
+                                       List<Integer> flechas, Long idAdmin,
+                                       String posicionArquero, String posicionDiana) {
         jdbcTemplate.execute(
                 (CallableStatementCreator) connection -> {
-                    // Llamamos al procedure que recibe 4 parámetros
-                    CallableStatement cs = connection.prepareCall("CALL registrar_puntaje_ronda(?, ?, ?, ?)");
+                    CallableStatement cs = connection.prepareCall(
+                            "CALL registrar_puntaje_ronda(?, ?, ?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ST_SetSRID(ST_GeomFromGeoJSON(?), 4326))");
                     cs.setLong(1, idRonda);
                     cs.setLong(2, idParticipacion);
-                    // Mapeamos el arreglo a "numeric" para que calce con el DECIMAL[] de Postgres
                     cs.setArray(3, connection.createArrayOf("numeric", flechas.toArray(new Integer[0])));
                     cs.setLong(4, idAdmin);
+                    cs.setString(5, posicionArquero);
+                    cs.setString(6, posicionDiana);
                     return cs;
                 },
                 (CallableStatementCallback<Void>) cs -> {
@@ -90,10 +92,6 @@ public class FlechaRepository {
         );
     }
 
-    /**
-     * Obtiene todas las flechas de un participante en una ronda específica.
-     * Retorna Map con keys: id_flecha, puntaje
-     */
     public List<Map<String, Object>> obtenerFlechasPorRonda(Long idParticipacion, Long idRonda) {
         String sql = """
             SELECT f.id_flecha, f.puntaje
@@ -105,10 +103,6 @@ public class FlechaRepository {
         return jdbcTemplate.queryForList(sql, idParticipacion, idRonda);
     }
 
-    /**
-     * Obtiene todas las flechas para un conjunto de participaciones en una sola consulta.
-     * Retorna Map con keys: id_participacion, numero_ronda, id_flecha, puntaje
-     */
     public List<Map<String, Object>> obtenerFlechasPorParticipaciones(List<Long> idsParticipacion) {
         if (idsParticipacion == null || idsParticipacion.isEmpty()) return Collections.emptyList();
 
@@ -126,12 +120,7 @@ public class FlechaRepository {
         return jdbcTemplate.queryForList(sql, params);
     }
 
-    /**
-     * Método para obtener el Leaderboard Histórico
-     * Retorna una lista de LeaderboardDTO con idUsuario, nombre y promedioPuntosFlecha
-     * */
     public List<LeaderboardDTO> obtenerLeaderboardHistorico() {
-        // CORRECCIÓN: Agregada la columna "posicion" al inicio del SELECT
         String sql = "SELECT posicion, id_usuario, nombre, promedio_puntos_flecha FROM leaderboard_top_50";
 
         return jdbcTemplate.query(sql, (rs, rowNum) ->
@@ -144,7 +133,6 @@ public class FlechaRepository {
         );
     }
 
-    // requerimiento 9: mejores del mes
     public List<LeaderboardDTO> obtenerMejoresArquerosUltimoMes() {
         String sql = """
         SELECT 

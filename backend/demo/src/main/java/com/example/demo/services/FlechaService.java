@@ -34,26 +34,8 @@ public class FlechaService {
         return flechaRepository.obtenerFlechasDeArqueroEnRonda(idUsuario, idTorneo, numeroRonda);
     }
 
-    public void registrarRondaCompleta(Long idTorneo, Long idUsuario, Integer numeroRonda, List<Integer> flechas, Long idAdmin) {
-        for (Integer puntaje : flechas) {
-            if (puntaje < 0 || puntaje > 10) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trampa detectada: Los puntajes deben estar entre 0 y 10");
-            }
-        }
-
-        Long idParticipacion = participacionRepository.obtenerIdParticipacion(idUsuario, idTorneo)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El arquero no está inscrito en este torneo"));
-
-        Long idRonda = rondaRepository.obtenerIdRonda(idTorneo, numeroRonda)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "La ronda " + numeroRonda + " no existe en este torneo"));
-
-        flechaRepository.guardarRondaCompletaSP(idRonda, idParticipacion, flechas, idAdmin);
-    }
-
-    // MÉTODO NUEVO CON DTO:
     @Transactional
     public void registrarRondaCompletaDTO(PuntajeRondaDTO request) {
-        // Validaciones
         for (Integer puntaje : request.getFlechas()) {
             if (puntaje < 0 || puntaje > 10) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Puntaje inválido");
@@ -61,10 +43,12 @@ public class FlechaService {
         }
 
         flechaRepository.guardarRondaCompletaSP(
-                request.getIdRonda(),           // 1. ID de la Ronda
-                request.getIdParticipacion(),   // 2. ID de la Participación
-                request.getFlechas(),           // 3. Arreglo de flechas
-                request.getIdAdmin()            // 4. ID del Administrador (¡Este faltaba!)
+                request.getIdRonda(),
+                request.getIdParticipacion(),
+                request.getFlechas(),
+                request.getIdAdmin(),
+                request.getPosicionArquero(),
+                request.getPosicionDiana()
         );
 
         registrarLogSistema(request);
@@ -74,7 +58,6 @@ public class FlechaService {
         System.out.println("Log: El admin " + request.getIdAdmin() + " registró puntajes.");
     }
 
-    // Método para pasar los datos al controlador
     public List<LeaderboardDTO> obtenerLeaderboard() {
         return flechaRepository.obtenerLeaderboardHistorico();
     }

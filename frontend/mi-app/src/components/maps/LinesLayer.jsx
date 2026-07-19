@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo } from "react";
 import { useMap } from "../../hooks/useMap";
 import { toFeatureCollection } from "./geojson";
+import { addLayer, removeLayer, removeSource } from "./maplibreLifecycle";
 
 const DEFAULT_PAINT = {
   "line-color": "#dc2626",
@@ -11,27 +12,6 @@ const DEFAULT_LAYOUT = {
   "line-cap": "round",
   "line-join": "round",
 };
-
-function addLayer(map, layerConfig, beforeId) {
-  if (beforeId) {
-    map.addLayer(layerConfig, beforeId);
-    return;
-  }
-
-  map.addLayer(layerConfig);
-}
-
-function removeLayer(map, layerId) {
-  if (map.getLayer(layerId)) {
-    map.removeLayer(layerId);
-  }
-}
-
-function removeSource(map, sourceId) {
-  if (map.getSource(sourceId)) {
-    map.removeSource(sourceId);
-  }
-}
 
 export default function LinesLayer({
   data,

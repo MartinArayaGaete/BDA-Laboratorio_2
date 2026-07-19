@@ -2,6 +2,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapContext } from "../../hooks/useMap";
+import { isMapRemoved } from "./maplibreLifecycle";
 
 const DEFAULT_CENTER = [-70.6693, -33.4489];
 
@@ -35,8 +36,11 @@ export default function Basemap({ children, center = DEFAULT_CENTER }) {
     mapInstance.on("load", handleLoad);
 
     return () => {
-      mapInstance.off("load", handleLoad);
-      mapInstance.remove();
+      if (!isMapRemoved(mapInstance)) {
+        mapInstance.off("load", handleLoad);
+        mapInstance.remove();
+      }
+
       mapRef.current = null;
     };
   }, []);

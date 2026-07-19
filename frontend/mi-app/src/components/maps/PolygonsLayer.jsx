@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo } from "react";
 import { useMap } from "../../hooks/useMap";
 import { toFeatureCollection } from "./geojson";
+import { addLayer, removeLayer, removeSource } from "./maplibreLifecycle";
 
 const DEFAULT_FILL_PAINT = {
   "fill-color": "#3b82f6",
@@ -13,27 +14,6 @@ const DEFAULT_LINE_PAINT = {
 };
 
 const DEFAULT_LAYOUT = {};
-
-function addLayer(map, layerConfig, beforeId) {
-  if (beforeId) {
-    map.addLayer(layerConfig, beforeId);
-    return;
-  }
-
-  map.addLayer(layerConfig);
-}
-
-function removeLayer(map, layerId) {
-  if (map.getLayer(layerId)) {
-    map.removeLayer(layerId);
-  }
-}
-
-function removeSource(map, sourceId) {
-  if (map.getSource(sourceId)) {
-    map.removeSource(sourceId);
-  }
-}
 
 export default function PolygonsLayer({
   data,

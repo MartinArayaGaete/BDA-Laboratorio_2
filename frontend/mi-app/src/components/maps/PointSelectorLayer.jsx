@@ -2,6 +2,7 @@ import maplibregl from "maplibre-gl";
 import { useEffect, useMemo, useRef } from "react";
 import { useMap } from "../../hooks/useMap";
 import { normalizeSelectedPoint } from "../../hooks/useSelectedPoint";
+import { isMapRemoved } from "./maplibreLifecycle";
 
 const DEFAULT_MARKER_COLOR = "#dc2626";
 const SELECT_EVENTS = new Set(["click", "mousemove"]);
@@ -21,6 +22,16 @@ function mapEventToPoint(event) {
       y: event.point.y,
     },
   };
+}
+
+function removeMarker(markerRef) {
+  try {
+    markerRef.current?.remove();
+  } catch {
+    // El mapa puede haber sido destruido antes de que el marker ejecute cleanup.
+  } finally {
+    markerRef.current = null;
+  }
 }
 
 export default function PointSelectorLayer({
@@ -77,8 +88,11 @@ export default function PointSelectorLayer({
     map.on("click", handleClick);
 
     return () => {
-      map.off("mousemove", handleMouseMove);
-      map.off("click", handleClick);
+      if (!isMapRemoved(map)) {
+        map.off("mousemove", handleMouseMove);
+        map.off("click", handleClick);
+      }
+
       canvas.style.cursor = previousCursor;
     };
   }, [map, ready, enabled, selectEvent]);
@@ -87,8 +101,7 @@ export default function PointSelectorLayer({
     if (!map || !ready) return;
 
     if (!selectedPoint) {
-      markerRef.current?.remove();
-      markerRef.current = null;
+      removeMarker(markerRef);
       markerOptionsRef.current = null;
       return;
     }
@@ -98,7 +111,7 @@ export default function PointSelectorLayer({
       markerOptionsRef.current?.draggable !== markerDraggable;
 
     if (!markerRef.current || markerOptionsChanged) {
-      markerRef.current?.remove();
+      removeMarker(markerRef);
 
       const marker = new maplibregl.Marker({
         color: markerColor,
@@ -122,8 +135,7 @@ export default function PointSelectorLayer({
 
   useEffect(() => {
     return () => {
-      markerRef.current?.remove();
-      markerRef.current = null;
+      removeMarker(markerRef);
       markerOptionsRef.current = null;
     };
   }, []);

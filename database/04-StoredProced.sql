@@ -6,7 +6,9 @@ CREATE OR REPLACE PROCEDURE registrar_puntaje_ronda(
     p_id_ronda BIGINT,
     p_id_participacion BIGINT,
     p_puntajes_flechas DECIMAL[],
-    p_id_admin BIGINT
+    p_id_admin BIGINT,
+    p_posicion_arquero GEOMETRY,
+    p_posicion_diana GEOMETRY
 )
 LANGUAGE plpgsql
 AS $$
@@ -38,10 +40,13 @@ BEGIN
     END LOOP;
 
     -- Insertar o actualizar puntaje de ronda (UPSERT)
-    INSERT INTO puntaje_ronda (id_ronda, id_participacion, puntaje_ronda)
-    VALUES (p_id_ronda, p_id_participacion, v_puntaje_total)
+    INSERT INTO puntaje_ronda (id_ronda, id_participacion, puntaje_ronda, posicion_arquero, posicion_diana)
+    VALUES (p_id_ronda, p_id_participacion, v_puntaje_total, p_posicion_arquero, p_posicion_diana)
     ON CONFLICT (id_ronda, id_participacion)
-    DO UPDATE SET puntaje_ronda = EXCLUDED.puntaje_ronda
+    DO UPDATE SET
+        puntaje_ronda = EXCLUDED.puntaje_ronda,
+        posicion_arquero = EXCLUDED.posicion_arquero,
+        posicion_diana = EXCLUDED.posicion_diana
     RETURNING id_puntaje_ronda INTO v_id_puntaje_ronda;
 
     -- Eliminar flechas anteriores y registrar las nuevas

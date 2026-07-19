@@ -1,20 +1,30 @@
+import { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginView from "./views/LoginView.jsx";
 import { ProtectedRoute } from "./components/common/ProtectedRoute.jsx";
 import Layout from "./components/common/Layout.jsx";
+import LoadingSpinner from "./components/common/LoadingSpinner.jsx";
 
-import DashboardView from "./views/admin/DashboardView.jsx";
-import TorneosListView from "./views/admin/TorneosListView.jsx";
-import CrearTorneoView from "./views/admin/CrearTorneoView.jsx";
-import TorneoDetalleView from "./views/admin/TorneoDetalleView.jsx";
-import UsuariosView from "./views/admin/UsuariosView.jsx";
-import CategoriasView from "./views/admin/CategoriasView.jsx";
-import LogsView from "./views/admin/LogsView.jsx";
+const DashboardView = lazy(() => import("./views/admin/DashboardView.jsx"));
+const TorneosListView = lazy(() => import("./views/admin/TorneosListView.jsx"));
+const CrearTorneoView = lazy(() => import("./views/admin/CrearTorneoView.jsx"));
+const TorneoDetalleView = lazy(() => import("./views/admin/TorneoDetalleView.jsx"));
+const UsuariosView = lazy(() => import("./views/admin/UsuariosView.jsx"));
+const CategoriasView = lazy(() => import("./views/admin/CategoriasView.jsx"));
+const LogsView = lazy(() => import("./views/admin/LogsView.jsx"));
 
-import ArcherDashboardView from "./views/archer/ArcherDashboardView.jsx";
-import TorneosView from "./views/archer/TorneosView.jsx";
-import HistorialView from "./views/archer/HistorialView.jsx";
-import EstadisticasView from "./views/archer/EstadisticasView.jsx";
+const ArcherDashboardView = lazy(() => import("./views/archer/ArcherDashboardView.jsx"));
+const TorneosView = lazy(() => import("./views/archer/TorneosView.jsx"));
+const HistorialView = lazy(() => import("./views/archer/HistorialView.jsx"));
+const EstadisticasView = lazy(() => import("./views/archer/EstadisticasView.jsx"));
+
+function lazyRoute(element) {
+  return (
+    <Suspense fallback={<LoadingSpinner message="Cargando vista..." />}>
+      {element}
+    </Suspense>
+  );
+}
 
 function App() {
   return (
@@ -25,23 +35,23 @@ function App() {
 
         <Route element={<Layout />}>
           <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
-            <Route path="/admin" element={<DashboardView />} />
-            <Route path="/admin/torneos" element={<TorneosListView />} />
-            <Route path="/admin/torneos/crear" element={<CrearTorneoView />} />
+            <Route path="/admin" element={lazyRoute(<DashboardView />)} />
+            <Route path="/admin/torneos" element={lazyRoute(<TorneosListView />)} />
+            <Route path="/admin/torneos/crear" element={lazyRoute(<CrearTorneoView />)} />
             <Route
               path="/admin/torneos/:idTorneo"
-              element={<TorneoDetalleView />}
+              element={lazyRoute(<TorneoDetalleView />)}
             />
-            <Route path="/admin/usuarios" element={<UsuariosView />} />
-            <Route path="/admin/categorias" element={<CategoriasView />} />
-            <Route path="/admin/logs" element={<LogsView />} />
+            <Route path="/admin/usuarios" element={lazyRoute(<UsuariosView />)} />
+            <Route path="/admin/categorias" element={lazyRoute(<CategoriasView />)} />
+            <Route path="/admin/logs" element={lazyRoute(<LogsView />)} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={["ARQUERO"]} />}>
-            <Route path="/archer" element={<ArcherDashboardView />} />
-            <Route path="/archer/torneos" element={<TorneosView />} />
-            <Route path="/archer/historial" element={<HistorialView />} />
-            <Route path="/archer/estadisticas" element={<EstadisticasView />} />
+            <Route path="/archer" element={lazyRoute(<ArcherDashboardView />)} />
+            <Route path="/archer/torneos" element={lazyRoute(<TorneosView />)} />
+            <Route path="/archer/historial" element={lazyRoute(<HistorialView />)} />
+            <Route path="/archer/estadisticas" element={lazyRoute(<EstadisticasView />)} />
           </Route>
         </Route>
       </Routes>

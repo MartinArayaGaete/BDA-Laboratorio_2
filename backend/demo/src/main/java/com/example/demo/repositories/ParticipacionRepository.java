@@ -189,10 +189,11 @@ public class ParticipacionRepository {
            COUNT(DISTINCT pr.id_ronda) AS rondas_jugadas,
            COALESCE(
                (SELECT ca.categoria_ambiental
-                FROM torneo t
-                JOIN sectores_ambientales sa ON ST_Intersects(t.geom_zona_competencia, sa.territorio)
+                FROM ronda r
+                JOIN sectores_ambientales sa ON r.id_zona_ambiental = sa.id_zona_ambiental
                 JOIN categoria_ambiental ca ON sa.id_categoria_ambiental = ca.id_categoria_ambiental
-                WHERE t.id_torneo = p.id_torneo
+                JOIN puntaje_ronda pr2 ON pr2.id_ronda = r.id_ronda
+                WHERE pr2.id_participacion = p.id_participacion
                 LIMIT 1),
                'Sin categoría ambiental'
            ) AS factor_ambiental
@@ -210,32 +211,6 @@ public class ParticipacionRepository {
         return Optional.of(result.get(0));
     }
 
-
-    public boolean estaArqueroDentroDeLaZona(Long idTorneo, String ubicacionArqueroGeoJson) {
-        String sql = """
-        SELECT ST_Contains(t.geom_zona_competencia, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326))
-        FROM torneo t
-        WHERE t.id_torneo = ?
-        """;
-
-        // queryForObject devuelve el resultado de la función booleana de PostGIS
-        Boolean resultado = jdbcTemplate.queryForObject(sql, Boolean.class, ubicacionArqueroGeoJson, idTorneo);
-        return resultado != null && resultado;
-    }
-
-
-    public boolean existeArqueroCercano(Long idTorneo, Long idUsuario, String ubicacionArqueroGeoJson) {
-        String sql = """
-        SELECT COUNT(*)
-        FROM participacion p
-        WHERE p.id_torneo = ? 
-          AND p.id_usuario != ?
-          AND ST_DistanceSphere(p.ubicacion_arquero, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326)) < 5.0
-        """;
-
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, idTorneo, idUsuario, ubicacionArqueroGeoJson);
-        return count != null && count > 0;
-    }
 
     /**
      * Obtiene los torneos en los que un usuario está inscrito.
@@ -255,20 +230,20 @@ public class ParticipacionRepository {
 
 
     /**
-     * Obtiene todos los arqueros con sus posiciones para un torneo específico.
+     * Obtiene todos los arqueros inscritos en un torneo.
+     * Las posiciones geoespaciales ahora están en puntaje_ronda,
+     * por lo que se obtienen desde allí.
      */
     public List<Map<String, Object>> obtenerArquerosConPosiciones(Long idTorneo) {
         String sql = """
-        SELECT 
-            u.id_usuario, 
-            u.nombre, 
-            u.rut,
-            ST_AsGeoJSON(p.ubicacion_arquero) as ubicacion_arquero,
-            ST_AsGeoJSON(p.ubicacion_blanco) as ubicacion_blanco
-        FROM participacion p
-        INNER JOIN usuario u ON p.id_usuario = u.id_usuario
-        WHERE p.id_torneo = ?
-        """;
+    SELECT 
+        u.id_usuario, 
+        u.nombre, 
+        u.rut
+    FROM participacion p
+    INNER JOIN usuario u ON p.id_usuario = u.id_usuario
+    WHERE p.id_torneo = ?
+    """;
         return jdbcTemplate.queryForList(sql, idTorneo);
     }
 }

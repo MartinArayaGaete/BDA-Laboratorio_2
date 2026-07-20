@@ -12,7 +12,7 @@ public class TorneoCompletoDTO {
     private Long idTorneo;
     private String nombreTorneo;
     private String estadoTorneo;
-    private String geomZonaCompetencia;  // GeoJSON Polygon
-    private String lineaTiro;            // GeoJSON LineString
+    private String geomZonaCompetencia;
+    private String lineaTiro;
     private List<ArqueroPosicionDTO> arqueros;
 }

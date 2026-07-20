@@ -142,11 +142,9 @@ public class ParticipacionService {
      * Obtiene los datos completos de un torneo incluyendo posiciones de arqueros.
      */
     public TorneoCompletoDTO obtenerDatosCompletosTorneo(Long idTorneo) {
-        // Obtener torneo
         Torneo torneo = torneoRepository.buscarPorId(idTorneo)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
 
-        // Obtener arqueros con posiciones
         List<Map<String, Object>> arquerosData = participacionRepository.obtenerArquerosConPosiciones(idTorneo);
 
         List<ArqueroPosicionDTO> arqueros = new ArrayList<>();
@@ -165,7 +163,7 @@ public class ParticipacionService {
         dto.setNombreTorneo(torneo.getNombreTorneo());
         dto.setEstadoTorneo(torneo.getEstadoTorneo());
         dto.setGeomZonaCompetencia(torneo.getGeomZonaCompetencia());
-        dto.setLineaTiro(null); // Si tienes este campo en Torneo, agrégalo
+        dto.setLineaTiro(torneo.getLineaTiro());
         dto.setArqueros(arqueros);
 
         return dto;

@@ -48,6 +48,11 @@ public class TorneoController {
         return ResponseEntity.ok(torneoService.obtenerTodos());
     }
 
+    @GetMapping("/{idTorneo}")
+    public ResponseEntity<Torneo> obtenerTorneo(@PathVariable Long idTorneo) {
+        return ResponseEntity.ok(torneoService.obtenerTorneo(idTorneo));
+    }
+
     @GetMapping("/paginados")
     public ResponseEntity<com.example.demo.dtos.TorneosPaginadosResponse> obtenerTorneosPaginados(
             @RequestParam(defaultValue = "0") int page,

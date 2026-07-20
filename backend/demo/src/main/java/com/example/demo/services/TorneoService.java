@@ -44,6 +44,11 @@ public class TorneoService {
         return torneoRepository.obtenerTodos();
     }
 
+    public Torneo obtenerTorneo(Long idTorneo) {
+        return torneoRepository.buscarPorId(idTorneo)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
+    }
+
     public TorneosPaginadosResponse obtenerTorneosPaginados(int page, int size) {
         if (page < 0 || size <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Los parámetros de paginación son inválidos");

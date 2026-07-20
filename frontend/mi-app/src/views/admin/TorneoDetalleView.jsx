@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import torneoService from "../../api/apiTorneos.js";
 import apiParticipaciones from "../../api/apiParticipaciones.js";
@@ -7,7 +7,10 @@ import TorneoCabecera from "../../components/admin/TorneoCabecera.jsx";
 import ListaParticipantes from "../../components/admin/ListaParticipantes.jsx";
 import FormularioFlechas from "../../components/admin/FormularioFlechas.jsx";
 import Podio from "../../components/admin/Podio.jsx";
-import MapaTorneo from "../../components/admin/MapaTorneo.jsx";
+import Basemap from "../../components/maps/Basemap.jsx";
+import PolygonsLayer from "../../components/maps/PolygonsLayer.jsx";
+import FitBoundsFromPolygonLayer from "../../components/maps/FitBoundsFromPolygonLayer.jsx";
+
 
 export default function TorneoDetalleView() {
   const { idTorneo } = useParams();
@@ -26,13 +29,10 @@ export default function TorneoDetalleView() {
   const [flechas, setFlechas] = useState(["", ""]);
   const [guardandoPuntaje, setGuardandoPuntaje] = useState(false);
 
-  const cargarDatos = async () => {
+  const cargarDatos = useCallback(async () => {
     try {
       setLoading(true);
-      const todosTorneos = await torneoService.obtenerTodos();
-      const torneoActual = todosTorneos.find(
-        (t) => t.idTorneo === parseInt(idTorneo),
-      );
+      const torneoActual = await torneoService.obtenerTorneo(idTorneo);
 
       if (!torneoActual) {
         navigate("/admin/torneos");
@@ -41,7 +41,7 @@ export default function TorneoDetalleView() {
 
       setTorneo(torneoActual);
 
-      // Usar el nuevo endpoint que devuelve todo junto
+      // Cargar datos del torneo desde los servicios disponibles
       const [datosCompletos, rondasData, podioData] = await Promise.all([
         apiParticipaciones
           .obtenerDatosCompletosTorneo(idTorneo)
@@ -65,37 +65,38 @@ export default function TorneoDetalleView() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [idTorneo, navigate]);
 
   useEffect(() => {
-    cargarDatos();
-  }, [idTorneo]);
+    void cargarDatos();
+  }, [cargarDatos]);
 
   useEffect(() => {
-    if (usuarioSel && rondaSel && torneo?.estadoTorneo === "IN_COURSE") {
-      api
-        .get(
-          `/torneos/${idTorneo}/rondas/${rondaSel}/arqueros/${usuarioSel}/flechas`,
-        )
-        .then((res) => {
-          setFlechas(
-            res.data?.length
-              ? res.data.map((f) => f.puntaje.toString())
-              : ["", ""],
-          );
-        })
-        .catch(() => setFlechas(["", ""]));
-    } else {
-      setFlechas(["", ""]);
+    if (!usuarioSel || !rondaSel || torneo?.estadoTorneo !== "IN_COURSE") {
+      queueMicrotask(() => setFlechas(["", ""]));
+      return;
     }
-  }, [usuarioSel, rondaSel]);
+
+    void api
+      .get(
+        `/torneos/${idTorneo}/rondas/${rondaSel}/arqueros/${usuarioSel}/flechas`,
+      )
+      .then((res) => {
+        setFlechas(
+          res.data?.length
+            ? res.data.map((f) => f.puntaje.toString())
+            : ["", ""],
+        );
+      })
+      .catch(() => setFlechas(["", ""]));
+  }, [idTorneo, rondaSel, torneo?.estadoTorneo, usuarioSel]);
 
   const handleIniciarTorneo = async () => {
     if (window.confirm("¿Iniciar torneo?")) {
       try {
         await torneoService.iniciarTorneo(idTorneo);
         cargarDatos();
-      } catch (err) {
+      } catch {
         alert("Error al iniciar el torneo");
       }
     }
@@ -106,7 +107,7 @@ export default function TorneoDetalleView() {
       try {
         await torneoService.finalizarTorneo(idTorneo);
         cargarDatos();
-      } catch (err) {
+      } catch {
         alert("Error al finalizar el torneo");
       }
     }
@@ -114,8 +115,8 @@ export default function TorneoDetalleView() {
 
   const handleGuardarPuntaje = async (e) => {
     e.preventDefault();
-    const flechasInt = flechas.map((f) => parseInt(f));
-    if (flechasInt.some((f) => isNaN(f))) {
+    const flechasInt = flechas.map((f) => Number.parseInt(f, 10));
+    if (flechasInt.some((f) => Number.isNaN(f))) {
       alert("Completa todos los valores (0-10)");
       return;
     }
@@ -128,7 +129,7 @@ export default function TorneoDetalleView() {
         flechasInt,
       );
       alert("Puntajes guardados correctamente");
-    } catch (err) {
+    } catch {
       alert("Error al guardar puntajes");
     } finally {
       setGuardandoPuntaje(false);
@@ -138,7 +139,7 @@ export default function TorneoDetalleView() {
   if (loading) {
     return (
       <div className="text-center mt-5">
-        <div className="spinner-border" role="status" />
+        <output className="spinner-border" aria-label="Cargando" />
         <p className="mt-3 text-muted">Cargando detalles del torneo...</p>
       </div>
     );
@@ -168,7 +169,20 @@ export default function TorneoDetalleView() {
       </div>
 
       {/* Mapa del torneo */}
-      {mostrarMapa && <MapaTorneo torneo={torneo} inscritos={inscritos} />}
+      {mostrarMapa && (
+        <div style={{ width: "100%", height: "420px" }}>
+          <Basemap>
+            <PolygonsLayer
+              data={torneo?.geomZonaCompetencia}
+            />
+            
+            <FitBoundsFromPolygonLayer
+              polygon={torneo?.geomZonaCompetencia}
+            />
+            
+          </Basemap>
+        </div>
+      )}
 
       <div className="row">
         <div className="col-md-5">

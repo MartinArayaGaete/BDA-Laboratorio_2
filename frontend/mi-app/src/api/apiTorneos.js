@@ -7,6 +7,11 @@ const torneoService = {
     return response.data;
   },
 
+  obtenerTorneo: async (idTorneo) => {
+    const response = await api.get(`/torneos/${idTorneo}`);
+    return response.data;
+  },
+
   // Crear un nuevo torneo
   crearTorneo: async (datosTorneo) => {
     const response = await api.post("/torneos", datosTorneo);

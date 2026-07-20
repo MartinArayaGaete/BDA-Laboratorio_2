@@ -22,8 +22,6 @@ export default function Basemap({ children, center = DEFAULT_CENTER }) {
       style: "https://tiles.openfreemap.org/styles/liberty",
       center: initialCenter.current,
       zoom: 12,
-      pitch: 60,
-      bearing: 20,
     });
 
     mapRef.current = mapInstance;

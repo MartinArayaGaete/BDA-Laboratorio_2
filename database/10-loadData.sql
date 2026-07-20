@@ -31,10 +31,10 @@ BEGIN
     RESTART IDENTITY CASCADE;
 
     -- 1. Insertar Categorías
-    INSERT INTO categoria (nombre_categoria) VALUES
-    ('Recurvo 18m Novatos'),
-    ('Recurvo 70m Avanzado'),
-    ('Compuesto 50m Libre');
+    INSERT INTO categoria (nombre_categoria, distancia_tiro) VALUES
+    ('Recurvo 18m Novatos', 18),
+    ('Recurvo 70m Avanzado', 70),
+    ('Compuesto 50m Libre', 50);
 
     -- 2. Insertar Administrador principal
     INSERT INTO usuario (rut, nombre, correo, contrasena, rol)

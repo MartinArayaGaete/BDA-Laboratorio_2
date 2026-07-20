@@ -22,6 +22,14 @@ const rondaService = {
     );
     return response.data;
   },
+
+  asignarZonaAmbiental: async (idRonda, zonaData) => {
+    const response = await api.post(
+      `/rondas/${idRonda}/zona-ambiental`,
+      zonaData,
+    );
+    return response.data;
+  },
 };
 
 export default rondaService;

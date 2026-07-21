@@ -23,18 +23,19 @@ public class CategoriaRepository {
 		Categoria c = new Categoria();
 		c.setIdCategoria(rs.getLong("id_categoria"));
 		c.setNombreCategoria(rs.getString("nombre_categoria"));
+		c.setDistanciaTiro(rs.getObject("distancia_tiro") != null ? rs.getInt("distancia_tiro") : null);
 		return c;
 	}
 
 	// Recupera todas las categorias desde la base de datos
 	public List<Categoria> obtenerTodas() {
-		String sql = "SELECT id_categoria, nombre_categoria FROM categoria";
+		String sql = "SELECT id_categoria, nombre_categoria, distancia_tiro FROM categoria";
 		return jdbcTemplate.query(sql, (rs, rowNum) -> mapRowToCategoria(rs));
 	}
 
 	// Busca una categoria por su identificador
 	public Optional<Categoria> buscarPorId(Long idCategoria) {
-		String sql = "SELECT id_categoria, nombre_categoria FROM categoria WHERE id_categoria = ?";
+		String sql = "SELECT id_categoria, nombre_categoria, distancia_tiro FROM categoria WHERE id_categoria = ?";
 		try {
 			Categoria categoria = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> mapRowToCategoria(rs), idCategoria);
 			return Optional.ofNullable(categoria);
@@ -44,15 +45,15 @@ public class CategoriaRepository {
 	}
 
 	// Inserta una nueva categoria
-	public void crearCategoria(String nombreCategoria) {
-		String sql = "INSERT INTO categoria (nombre_categoria) VALUES (?)";
-		jdbcTemplate.update(sql, nombreCategoria);
+	public void crearCategoria(String nombreCategoria, Integer distanciaTiro) {
+		String sql = "INSERT INTO categoria (nombre_categoria, distancia_tiro) VALUES (?, ?)";
+		jdbcTemplate.update(sql, nombreCategoria, distanciaTiro);
 	}
 
-	// Actualiza el nombre de una categoria existente
-	public void actualizarCategoria(Long idCategoria, String nombreCategoria) {
-		String sql = "UPDATE categoria SET nombre_categoria = ? WHERE id_categoria = ?";
-		jdbcTemplate.update(sql, nombreCategoria, idCategoria);
+	// Actualiza el nombre y la distancia de una categoria existente
+	public void actualizarCategoria(Long idCategoria, String nombreCategoria, Integer distanciaTiro) {
+		String sql = "UPDATE categoria SET nombre_categoria = ?, distancia_tiro = ? WHERE id_categoria = ?";
+		jdbcTemplate.update(sql, nombreCategoria, distanciaTiro, idCategoria);
 	}
 
 	// Elimina una categoria por su identificador

@@ -29,6 +29,7 @@ export default function TablaCategorias({ categorias, onCategoriaEliminada }) {
               ID
             </th>
             <th className="text-white">Nombre</th>
+            <th className="text-white">Distancia (m)</th>
             <th className="text-white" style={{ width: "120px" }}>
               Acciones
             </th>
@@ -39,6 +40,9 @@ export default function TablaCategorias({ categorias, onCategoriaEliminada }) {
             <tr key={categoria.idCategoria}>
               <td className="text-muted">{categoria.idCategoria}</td>
               <td className="fw-bold">{categoria.nombreCategoria}</td>
+              <td className="text-muted">
+                {categoria.distanciaTiro == null ? "—" : `${categoria.distanciaTiro} m`}
+              </td>
               <td>
                 <button
                   className="btn btn-outline-danger btn-sm"

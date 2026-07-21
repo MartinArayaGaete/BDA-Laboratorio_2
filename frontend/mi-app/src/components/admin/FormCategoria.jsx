@@ -3,6 +3,7 @@ import categoriaService from "../../api/apiCategorias.js";
 
 export default function FormCategoria({ onCategoriaCreada }) {
   const [nombreCategoria, setNombreCategoria] = useState("");
+  const [distanciaTiro, setDistanciaTiro] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -17,14 +18,24 @@ export default function FormCategoria({ onCategoriaCreada }) {
       return;
     }
 
+    const distanciaNumerica = distanciaTiro.trim() === "" ? null : Number(distanciaTiro);
+
+    if (distanciaTiro.trim() !== "" && (!Number.isInteger(distanciaNumerica) || distanciaNumerica < 0)) {
+      setError("La distancia de tiro debe ser un número entero mayor o igual a 0");
+      return;
+    }
+
     setGuardando(true);
     try {
       await categoriaService.crearCategoria({
         nombreCategoria: nombreCategoria.trim(),
+        distanciaTiro: distanciaNumerica,
       });
 
-      setSuccess(`Categoría "${nombreCategoria.trim()}" creada exitosamente`);
+      const mensajeDistancia = distanciaNumerica === null ? "" : ` con distancia de tiro de ${distanciaNumerica} m`;
+      setSuccess(`Categoría "${nombreCategoria.trim()}" creada exitosamente${mensajeDistancia}`);
       setNombreCategoria("");
+      setDistanciaTiro("");
       if (onCategoriaCreada) onCategoriaCreada();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -44,7 +55,7 @@ export default function FormCategoria({ onCategoriaCreada }) {
         {success && <div className="alert alert-success">{success}</div>}
 
         <form onSubmit={handleSubmit} className="row g-2 align-items-end">
-          <div className="col-md-8">
+          <div className="col-md-6">
             <label className="form-label">Nombre</label>
             <input
               type="text"
@@ -55,7 +66,20 @@ export default function FormCategoria({ onCategoriaCreada }) {
               disabled={guardando}
             />
           </div>
-          <div className="col-md-4">
+          <div className="col-md-3">
+            <label className="form-label">Distancia de tiro (m)</label>
+            <input
+              type="number"
+              className="form-control"
+              min="0"
+              step="1"
+              placeholder="Ej: 70"
+              value={distanciaTiro}
+              onChange={(e) => setDistanciaTiro(e.target.value)}
+              disabled={guardando}
+            />
+          </div>
+          <div className="col-md-3">
             <button
               type="submit"
               className="btn btn-dark w-100"

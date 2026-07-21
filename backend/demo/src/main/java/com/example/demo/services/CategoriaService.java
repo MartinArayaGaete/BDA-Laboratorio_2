@@ -33,18 +33,24 @@ public class CategoriaService {
 		if (categoria == null || categoria.getNombreCategoria() == null || categoria.getNombreCategoria().isBlank()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la categoria es obligatorio");
 		}
-		categoriaRepository.crearCategoria(categoria.getNombreCategoria());
+		if (categoria.getDistanciaTiro() != null && categoria.getDistanciaTiro() < 0) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La distancia de tiro no puede ser negativa");
+		}
+		categoriaRepository.crearCategoria(categoria.getNombreCategoria(), categoria.getDistanciaTiro());
 	}
 
-	// Actualiza el nombre de una categoria existente
+	// Actualiza el nombre y la distancia de una categoria existente
 	public void actualizarCategoria(Long idCategoria, Categoria categoria) {
 		if (categoria == null || categoria.getNombreCategoria() == null || categoria.getNombreCategoria().isBlank()) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El nombre de la categoria es obligatorio");
 		}
+		if (categoria.getDistanciaTiro() != null && categoria.getDistanciaTiro() < 0) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La distancia de tiro no puede ser negativa");
+		}
 		if (categoriaRepository.buscarPorId(idCategoria).isEmpty()) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Categoria no encontrada");
 		}
-		categoriaRepository.actualizarCategoria(idCategoria, categoria.getNombreCategoria());
+		categoriaRepository.actualizarCategoria(idCategoria, categoria.getNombreCategoria(), categoria.getDistanciaTiro());
 	}
 
 	// Elimina una categoria si existe

@@ -30,6 +30,7 @@ public class TorneoRepository {
         t.setFechaInicio(rs.getObject("fecha_inicio", LocalDate.class));
         t.setFechaTermino(rs.getObject("fecha_termino", LocalDate.class));
         t.setGeomZonaCompetencia(rs.getString("espacio_torneo"));
+        t.setLineaTiro(rs.getString("linea_de_tiro"));
         t.setNroPlazaMax(rs.getInt("nro_plaza_max"));
         t.setNroPlazaActual(rs.getInt("nro_plaza_actual"));
         return t;
@@ -37,7 +38,7 @@ public class TorneoRepository {
 
     public void crearTorneo(Long idCategoria, String nombre, String estado,
                             LocalDate inicio, LocalDate termino,
-                            String geomZonaCompetencia, String lineaTiro,
+                            String espacioTorneo, String lineaDeTiro,
                             Integer nroPlazaMax) {
         String sql = "INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, " +
                 "fecha_inicio, fecha_termino, espacio_torneo, linea_de_tiro, " +
@@ -45,7 +46,7 @@ public class TorneoRepository {
                 "VALUES (?, ?, ?, ?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), " +
                 "ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, 0)";
         jdbcTemplate.update(sql, idCategoria, nombre, estado, inicio, termino,
-                geomZonaCompetencia, lineaTiro, nroPlazaMax);
+                espacioTorneo, lineaDeTiro, nroPlazaMax);
     }
 
     public int incrementarPlazaActual(Long idTorneo) {
@@ -63,7 +64,8 @@ public class TorneoRepository {
     public List<Torneo> obtenerTodos() {
         String sql = "SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, " +
                 "fecha_inicio, fecha_termino, nro_plaza_max, nro_plaza_actual, " +
-                "ST_AsGeoJSON(espacio_torneo) AS espacio_torneo FROM torneo";
+                "ST_AsGeoJSON(espacio_torneo) AS espacio_torneo, " +
+                "ST_AsGeoJSON(linea_de_tiro) AS linea_de_tiro FROM torneo";
         return jdbcTemplate.query(sql, (rs, rowNum) -> mapRowToTorneo(rs));
     }
 
@@ -107,7 +109,8 @@ public class TorneoRepository {
     public Optional<Torneo> buscarPorId(Long idTorneo) {
         String sql = "SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, " +
                 "fecha_inicio, fecha_termino, nro_plaza_max, nro_plaza_actual, " +
-                "ST_AsGeoJSON(espacio_torneo) AS espacio_torneo " +
+                "ST_AsGeoJSON(espacio_torneo) AS espacio_torneo, " +
+                "ST_AsGeoJSON(linea_de_tiro) AS linea_de_tiro " +
                 "FROM torneo WHERE id_torneo = ?";
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, (rs, rowNum) -> mapRowToTorneo(rs), idTorneo));
@@ -188,4 +191,59 @@ public class TorneoRepository {
         """;
         return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("categoria_ambiental"), idTorneo);
     }
+
+
+
+    /**
+     * Obtiene las posiciones de todos los arqueros en una ronda específica.
+     */
+    public List<Map<String, Object>> obtenerPosicionesPorRonda(Long idTorneo, Integer numeroRonda) {
+        String sql = """
+        SELECT 
+            u.id_usuario,
+            u.nombre,
+            u.rut,
+            p.id_participacion,
+            ST_AsGeoJSON(pr.posicion_arquero) as posicion_arquero,
+            ST_AsGeoJSON(pr.posicion_diana) as posicion_diana,
+            pr.puntaje_ronda
+        FROM ronda r
+        JOIN puntaje_ronda pr ON pr.id_ronda = r.id_ronda
+        JOIN participacion p ON pr.id_participacion = p.id_participacion
+        JOIN usuario u ON p.id_usuario = u.id_usuario
+        WHERE r.id_torneo = ? AND r.numero_ronda = ?
+        ORDER BY u.nombre
+        """;
+        return jdbcTemplate.queryForList(sql, idTorneo, numeroRonda);
+    }
+
+    /**
+     * Obtiene la posición de un arquero específico en una ronda específica.
+     */
+    public Optional<Map<String, Object>> obtenerPosicionArqueroEnRonda(Long idTorneo, Integer numeroRonda, Long idUsuario) {
+        String sql = """
+        SELECT 
+            u.id_usuario,
+            u.nombre,
+            u.rut,
+            p.id_participacion,
+            ST_AsGeoJSON(pr.posicion_arquero) as posicion_arquero,
+            ST_AsGeoJSON(pr.posicion_diana) as posicion_diana,
+            pr.puntaje_ronda,
+            COALESCE(
+                (SELECT json_agg(f.puntaje ORDER BY f.id_flecha)
+                 FROM flecha f WHERE f.id_puntaje_ronda = pr.id_puntaje_ronda),
+                '[]'::json
+            ) as flechas
+        FROM ronda r
+        JOIN puntaje_ronda pr ON pr.id_ronda = r.id_ronda
+        JOIN participacion p ON pr.id_participacion = p.id_participacion
+        JOIN usuario u ON p.id_usuario = u.id_usuario
+        WHERE r.id_torneo = ? AND r.numero_ronda = ? AND u.id_usuario = ?
+        """;
+        List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, idTorneo, numeroRonda, idUsuario);
+        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
+    }
+
 }
+

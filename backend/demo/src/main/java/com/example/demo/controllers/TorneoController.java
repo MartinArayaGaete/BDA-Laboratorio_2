@@ -185,4 +185,32 @@ public class TorneoController {
         List<String> climas = torneoService.obtenerClimasPorTorneo(id);
         return ResponseEntity.ok(climas);
     }
+
+
+    /**
+     * Obtiene las posiciones de todos los arqueros en una ronda específica.
+     * GET /api/torneos/{idTorneo}/rondas/{numeroRonda}/posiciones
+     */
+    @GetMapping("/{idTorneo}/rondas/{numeroRonda}/posiciones")
+    public ResponseEntity<List<Map<String, Object>>> obtenerPosicionesRonda(
+            @PathVariable Long idTorneo,
+            @PathVariable Integer numeroRonda) {
+        List<Map<String, Object>> posiciones = torneoService.obtenerPosicionesPorRonda(idTorneo, numeroRonda);
+        if (posiciones.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(posiciones);
+    }
+
+    /**
+     * Obtiene la posición de un arquero específico en una ronda.
+     * GET /api/torneos/{idTorneo}/rondas/{numeroRonda}/arqueros/{idUsuario}/posicion
+     */
+    @GetMapping("/{idTorneo}/rondas/{numeroRonda}/arqueros/{idUsuario}/posicion")
+    public ResponseEntity<Map<String, Object>> obtenerPosicionArqueroEnRonda(
+            @PathVariable Long idTorneo,
+            @PathVariable Integer numeroRonda,
+            @PathVariable Long idUsuario) {
+        return ResponseEntity.ok(torneoService.obtenerPosicionArqueroEnRonda(idTorneo, numeroRonda, idUsuario));
+    }
 }

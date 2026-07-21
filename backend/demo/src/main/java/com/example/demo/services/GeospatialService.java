@@ -22,8 +22,8 @@ public class GeospatialService {
     public TorneoMapaDTO obtenerMapaTorneo(Long idTorneo) {
         String sql = """
             SELECT id_torneo, nombre_torneo, 
-                   ST_AsGeoJSON(geom_zona_competencia) as zona, 
-                   ST_AsGeoJSON(linea_tiro) as linea 
+                   ST_AsGeoJSON(espacio_torneo) as zona, 
+                   ST_AsGeoJSON(linea_de_tiro) as linea 
             FROM torneo WHERE id_torneo = ?
             """;
 

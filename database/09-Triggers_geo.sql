@@ -7,7 +7,7 @@
 CREATE OR REPLACE FUNCTION validar_registro_puntaje_fn()
 RETURNS TRIGGER AS $$
 DECLARE
-    v_zona_competencia GEOMETRY;
+    v_espacio_torneo GEOMETRY;
     v_estado_torneo VARCHAR(80);
     v_nombre_torneo VARCHAR(80);
     v_id_torneo BIGINT;
@@ -21,10 +21,10 @@ BEGIN
     -- Obtener información del torneo
     SELECT t.estado_torneo,
            t.nombre_torneo,
-           t.geom_zona_competencia
+           t.espacio_torneo
     INTO v_estado_torneo,
          v_nombre_torneo,
-         v_zona_competencia
+         v_espacio_torneo
     FROM torneo t
     WHERE t.id_torneo = v_id_torneo;
 
@@ -37,7 +37,7 @@ BEGIN
     END IF;
 
     -- Validar existencia de la zona de competencia
-    IF v_zona_competencia IS NULL THEN
+    IF v_espacio_torneo IS NULL THEN
         RAISE EXCEPTION
         'REGISTRO RECHAZADO: El torneo "%" no tiene una zona de competencia definida.',
         v_nombre_torneo;
@@ -50,7 +50,7 @@ BEGIN
     END IF;
 
     -- Validar geocercado
-    IF NOT ST_Contains(v_zona_competencia, NEW.posicion_arquero) THEN
+    IF NOT ST_Contains(v_espacio_torneo, NEW.posicion_arquero) THEN
         RAISE EXCEPTION
         'REGISTRO RECHAZADO: El arquero se encuentra fuera de la zona de competencia del torneo "%".',
         v_nombre_torneo;
@@ -59,7 +59,6 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
 
 CREATE TRIGGER trigger_validar_registro_puntaje
 BEFORE INSERT OR UPDATE

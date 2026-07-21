@@ -18,12 +18,11 @@ DECLARE
     v_puntaje_total DECIMAL := 0;
     v_id_puntaje_ronda BIGINT;
     v_puntaje DECIMAL;
+    v_hay_flechas BOOLEAN;
 BEGIN
-    -- Configurar variables de sesión para el trigger de auditoría
     PERFORM set_config('my.user_id', p_id_admin::text, true);
     PERFORM set_config('my.ronda_id', p_id_ronda::text, true);
 
-    -- Obtener el torneo y validar que esté en curso
     SELECT id_torneo INTO v_torneo_id FROM ronda WHERE id_ronda = p_id_ronda;
     SELECT estado_torneo INTO v_estado FROM torneo WHERE id_torneo = v_torneo_id;
 
@@ -31,15 +30,18 @@ BEGIN
         RAISE EXCEPTION 'El torneo no está en curso';
     END IF;
 
-    -- Validar cada puntaje (0-10)
-    FOREACH v_puntaje IN ARRAY p_puntajes_flechas LOOP
-        IF v_puntaje < 0 OR v_puntaje > 10 THEN
-            RAISE EXCEPTION 'Puntaje inválido: %', v_puntaje;
-        END IF;
-        v_puntaje_total := v_puntaje_total + v_puntaje;
-    END LOOP;
+    v_hay_flechas := array_length(p_puntajes_flechas, 1) IS NOT NULL
+                     AND array_length(p_puntajes_flechas, 1) > 0;
 
-    -- Insertar o actualizar puntaje de ronda (UPSERT)
+    IF v_hay_flechas THEN
+        FOREACH v_puntaje IN ARRAY p_puntajes_flechas LOOP
+            IF v_puntaje < 0 OR v_puntaje > 10 THEN
+                RAISE EXCEPTION 'Puntaje inválido: %', v_puntaje;
+            END IF;
+            v_puntaje_total := v_puntaje_total + v_puntaje;
+        END LOOP;
+    END IF;
+
     INSERT INTO puntaje_ronda (id_ronda, id_participacion, puntaje_ronda, posicion_arquero, posicion_diana)
     VALUES (p_id_ronda, p_id_participacion, v_puntaje_total, p_posicion_arquero, p_posicion_diana)
     ON CONFLICT (id_ronda, id_participacion)
@@ -49,13 +51,13 @@ BEGIN
         posicion_diana = EXCLUDED.posicion_diana
     RETURNING id_puntaje_ronda INTO v_id_puntaje_ronda;
 
-    -- Eliminar flechas anteriores y registrar las nuevas
-    DELETE FROM flecha WHERE id_puntaje_ronda = v_id_puntaje_ronda;
-    FOREACH v_puntaje IN ARRAY p_puntajes_flechas LOOP
-        INSERT INTO flecha (id_puntaje_ronda, puntaje) VALUES (v_id_puntaje_ronda, v_puntaje);
-    END LOOP;
+    IF v_hay_flechas THEN
+        DELETE FROM flecha WHERE id_puntaje_ronda = v_id_puntaje_ronda;
+        FOREACH v_puntaje IN ARRAY p_puntajes_flechas LOOP
+            INSERT INTO flecha (id_puntaje_ronda, puntaje) VALUES (v_id_puntaje_ronda, v_puntaje);
+        END LOOP;
+    END IF;
 
-    -- Actualizar puntaje final del arquero en el torneo
     UPDATE participacion p
     SET puntaje_final = (
         SELECT COALESCE(SUM(pr.puntaje_ronda), 0)

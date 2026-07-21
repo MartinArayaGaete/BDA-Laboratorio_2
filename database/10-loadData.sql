@@ -1,11 +1,5 @@
--- ============================================
--- 10-poblado-zonas-ambientales.sql
--- Poblado inicial de zonas ambientales
--- ============================================
-
 DELETE FROM sectores_ambientales;
 DELETE FROM categoria_ambiental;
-
 ALTER SEQUENCE categoria_ambiental_id_categoria_ambiental_seq RESTART WITH 1;
 ALTER SEQUENCE sectores_ambientales_id_zona_ambiental_seq RESTART WITH 1;
 

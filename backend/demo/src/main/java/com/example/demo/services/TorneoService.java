@@ -170,4 +170,21 @@ public class TorneoService {
     public List<String> obtenerClimasPorTorneo(Long idTorneo) {
         return torneoRepository.obtenerClimasPorTorneo(idTorneo);
     }
+
+
+    public List<Map<String, Object>> obtenerPosicionesPorRonda(Long idTorneo, Integer numeroRonda) {
+        if (torneoRepository.buscarPorId(idTorneo).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado");
+        }
+        return torneoRepository.obtenerPosicionesPorRonda(idTorneo, numeroRonda);
+    }
+
+    public Map<String, Object> obtenerPosicionArqueroEnRonda(Long idTorneo, Integer numeroRonda, Long idUsuario) {
+        if (torneoRepository.buscarPorId(idTorneo).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado");
+        }
+        return torneoRepository.obtenerPosicionArqueroEnRonda(idTorneo, numeroRonda, idUsuario)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No se encontró puntaje para el arquero en esta ronda"));
+    }
 }

@@ -1,7 +1,6 @@
 import api from "./api";
 
 const torneoService = {
-  // Obtener todos los torneos
   obtenerTodos: async () => {
     const response = await api.get("/torneos");
     return response.data;
@@ -12,19 +11,17 @@ const torneoService = {
     return response.data;
   },
 
-  // Crear un nuevo torneo
+  // ✅ CORREGIDO: Agregar nroPlazaMax
   crearTorneo: async (datosTorneo) => {
     const response = await api.post("/torneos", datosTorneo);
     return response.data;
   },
 
-  // Iniciar el torneo
   iniciarTorneo: async (idTorneo) => {
     const response = await api.post(`/torneos/${idTorneo}/iniciar`);
     return response.data;
   },
 
-  // agregar ronda
   crearRonda: async (idTorneo, numeroRonda) => {
     const response = await api.post(
       `/torneos/${idTorneo}/rondas/${numeroRonda}`,
@@ -32,30 +29,46 @@ const torneoService = {
     return response.data;
   },
 
-  // Registrar ronda completa
-  registrarPuntajes: async (idTorneo, idUsuario, numeroRonda, flechas) => {
-    const response = await api.post(
-      `/torneos/${idTorneo}/arqueros/${idUsuario}/rondas/${numeroRonda}/flechas`,
-      { flechas },
-    );
+  // ✅ NUEVO: Reemplaza a registrarPuntajes (que está desactualizado)
+  registrarPuntaje: async (datosPuntaje) => {
+    const response = await api.post("/torneos/registrar-puntaje", datosPuntaje);
     return response.data;
   },
 
-  // Finalizar torneo y calcular ranking
   finalizarTorneo: async (idTorneo) => {
     const response = await api.post(`/torneos/${idTorneo}/finalizar`);
     return response.data;
   },
 
-  // Obtener el podio
   obtenerPodio: async (idTorneo) => {
     const response = await api.get(`/torneos/${idTorneo}/podio`);
     return response.data;
   },
 
-  // leaderboard
   obtenerLeaderboardHistorico: async () => {
     const response = await api.get("/torneos/leaderboard");
+    return response.data;
+  },
+
+  // ✅ NUEVO
+  obtenerClimasPorTorneo: async (idTorneo) => {
+    const response = await api.get(`/torneos/${idTorneo}/climas`);
+    return response.data;
+  },
+
+  // ✅ NUEVO
+  obtenerPosicionesRonda: async (idTorneo, numeroRonda) => {
+    const response = await api.get(
+      `/torneos/${idTorneo}/rondas/${numeroRonda}/posiciones`,
+    );
+    return response.data;
+  },
+
+  // ✅ NUEVO
+  obtenerPosicionArqueroEnRonda: async (idTorneo, numeroRonda, idUsuario) => {
+    const response = await api.get(
+      `/torneos/${idTorneo}/rondas/${numeroRonda}/arqueros/${idUsuario}/posicion`,
+    );
     return response.data;
   },
 };

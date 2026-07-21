@@ -47,10 +47,7 @@ export default function EstadisticasView() {
       <div>
         <h2 className="mb-4 text-dark">Mis Estadísticas</h2>
         <div className="alert alert-danger">{error}</div>
-        <button
-          className="btn btn-outline-primary"
-          onClick={cargarEstadisticas}
-        >
+        <button className="btn btn-outline-dark" onClick={cargarEstadisticas}>
           Reintentar
         </button>
       </div>
@@ -63,26 +60,30 @@ export default function EstadisticasView() {
 
       <div className="row g-3 mb-4">
         <div className="col-md-4">
-          <div className="card bg-primary text-white shadow-sm">
+          <div className="card text-white bg-dark shadow-sm">
             <div className="card-body text-center py-4">
-              <h2>{estadisticas?.torneosTotales || 0}</h2>
-              <p className="mb-0 opacity-75">Torneos Totales</p>
+              <h2 className="text-white">
+                {estadisticas?.torneosTotales || 0}
+              </h2>
+              <p className="mb-0 text-white-50">Torneos Totales</p>
             </div>
           </div>
         </div>
         <div className="col-md-4">
-          <div className="card bg-success text-white shadow-sm">
+          <div className="card text-white bg-dark shadow-sm">
             <div className="card-body text-center py-4">
-              <h2>{estadisticas?.totalFlechas || 0}</h2>
-              <p className="mb-0 opacity-75">Flechas Lanzadas</p>
+              <h2 className="text-white">{estadisticas?.totalFlechas || 0}</h2>
+              <p className="mb-0 text-white-50">Flechas Lanzadas</p>
             </div>
           </div>
         </div>
         <div className="col-md-4">
-          <div className="card bg-info text-white shadow-sm">
+          <div className="card text-white bg-dark shadow-sm">
             <div className="card-body text-center py-4">
-              <h2>{estadisticas?.porcentajeAcierto || 0}%</h2>
-              <p className="mb-0 opacity-75">Precisión</p>
+              <h2 className="text-white">
+                {estadisticas?.porcentajeAcierto || 0}%
+              </h2>
+              <p className="mb-0 text-white-50">Precisión</p>
             </div>
           </div>
         </div>
@@ -90,51 +91,50 @@ export default function EstadisticasView() {
 
       <div className="row g-3 mb-4">
         <div className="col-md-4">
-          <div className="card shadow-sm">
+          <div className="card shadow-sm bg-white">
             <div className="card-body text-center py-4">
-              <h3 className="text-warning">{estadisticas?.totalPuntos || 0}</h3>
-              <p className="text-muted mb-0">Puntos Totales</p>
+              <h3 className="text-dark">{estadisticas?.totalPuntos || 0}</h3>
+              <p className="text-dark mb-0">Puntos Totales</p>
             </div>
           </div>
         </div>
         <div className="col-md-4">
-          <div className="card shadow-sm">
+          <div className="card shadow-sm bg-white">
             <div className="card-body text-center py-4">
-              <h3 className="text-primary">
+              <h3 className="text-dark">
                 {estadisticas?.promedioPuntos != null
                   ? Number(estadisticas.promedioPuntos).toFixed(2)
                   : "0.00"}
               </h3>
-              <p className="text-muted mb-0">Promedio por Flecha</p>
+              <p className="text-dark mb-0">Promedio por Flecha</p>
             </div>
           </div>
         </div>
         <div className="col-md-4">
-          <div className="card shadow-sm">
+          <div className="card shadow-sm bg-white">
             <div className="card-body text-center py-4">
-              <h3 className="text-success">
+              <h3 className="text-dark">
                 {estadisticas?.flechasAcertadas || 0}
               </h3>
-              <p className="text-muted mb-0">Flechas con Puntaje</p>
+              <p className="text-dark mb-0">Flechas con Puntaje</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Barra de progreso */}
-      <div className="card shadow-sm">
+      <div className="card shadow-sm bg-white">
         <div className="card-body">
-          <h5>Precisión General</h5>
+          <h5 className="text-dark">Precisión General</h5>
           <div className="progress" style={{ height: "30px" }}>
             <div
-              className="progress-bar bg-success fw-bold"
+              className="progress-bar bg-dark fw-bold"
               role="progressbar"
               style={{ width: `${estadisticas?.porcentajeAcierto || 0}%` }}
             >
               {estadisticas?.porcentajeAcierto || 0}%
             </div>
           </div>
-          <small className="text-muted mt-2 d-block">
+          <small className="text-dark mt-2 d-block">
             {estadisticas?.flechasAcertadas || 0} de{" "}
             {estadisticas?.totalFlechas || 0} flechas acertadas (
             {estadisticas?.totalPuntos || 0} puntos totales)

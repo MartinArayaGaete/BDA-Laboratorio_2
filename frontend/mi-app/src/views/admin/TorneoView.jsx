@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import torneoService from "../../api/apiTorneos.js";
-import participacionService from "../../api/participacionService.js";
+import apiParticipaciones from "../../api/apiParticipaciones.js";
 import api from "../../api/api.js";
 import TorneoCabecera from "../../components/admin/TorneoCabecera.jsx";
 import ListaParticipantes from "../../components/admin/ListaParticipantes.jsx";
@@ -23,16 +23,13 @@ export default function TorneoDetalleView() {
 
   const [usuarioSel, setUsuarioSel] = useState("");
   const [rondaSel, setRondaSel] = useState("");
-  const [flechas, setFlechas] = useState(["", ""]);
+  const [flechas, setFlechas] = useState(["", "", "", "", "", ""]);
   const [guardandoPuntaje, setGuardandoPuntaje] = useState(false);
 
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      const todosTorneos = await torneoService.obtenerTodos();
-      const torneoActual = todosTorneos.find(
-        (t) => t.idTorneo === parseInt(idTorneo),
-      );
+      const torneoActual = await torneoService.obtenerTorneo(idTorneo);
 
       if (!torneoActual) {
         navigate("/admin/torneos");
@@ -41,10 +38,10 @@ export default function TorneoDetalleView() {
 
       setTorneo(torneoActual);
 
-      const [inscritosData, rondasData, podioData] = await Promise.all([
-        participacionService
-          .obtenerInscritosPorTorneo(idTorneo)
-          .catch(() => []),
+      const [datosCompletos, rondasData, podioData] = await Promise.all([
+        apiParticipaciones
+          .obtenerDatosCompletosTorneo(idTorneo)
+          .catch(() => null),
         api
           .get(`/rondas/torneo/${idTorneo}`)
           .then((r) => r.data)
@@ -54,7 +51,7 @@ export default function TorneoDetalleView() {
           : Promise.resolve([]),
       ]);
 
-      setInscritos(inscritosData);
+      setInscritos(datosCompletos?.arqueros || []);
       setRondas(rondasData);
       setPodio(podioData);
     } catch (err) {
@@ -70,23 +67,22 @@ export default function TorneoDetalleView() {
   }, [idTorneo]);
 
   useEffect(() => {
-    if (usuarioSel && rondaSel && torneo?.estadoTorneo === "IN_COURSE") {
-      api
-        .get(
-          `/torneos/${idTorneo}/rondas/${rondaSel}/arqueros/${usuarioSel}/flechas`,
-        )
-        .then((res) => {
-          setFlechas(
-            res.data?.length
-              ? res.data.map((f) => f.puntaje.toString())
-              : ["", ""],
-          );
-        })
-        .catch(() => setFlechas(["", ""]));
-    } else {
-      setFlechas(["", ""]);
+    if (!usuarioSel || !rondaSel || torneo?.estadoTorneo !== "IN_COURSE") {
+      setFlechas(["", "", "", "", "", ""]);
+      return;
     }
-  }, [usuarioSel, rondaSel]);
+
+    torneoService
+      .obtenerPosicionArqueroEnRonda(idTorneo, rondaSel, usuarioSel)
+      .then((data) => {
+        if (data?.flechas?.length) {
+          setFlechas(data.flechas.map((f) => f.toString()));
+        } else {
+          setFlechas(["", "", "", "", "", ""]);
+        }
+      })
+      .catch(() => setFlechas(["", "", "", "", "", ""]));
+  }, [idTorneo, rondaSel, torneo?.estadoTorneo, usuarioSel]);
 
   const handleIniciarTorneo = async () => {
     if (window.confirm("¿Iniciar torneo?")) {
@@ -112,20 +108,33 @@ export default function TorneoDetalleView() {
 
   const handleGuardarPuntaje = async (e) => {
     e.preventDefault();
-    const flechasInt = flechas.map((f) => parseInt(f));
+    const flechasInt = flechas.filter((f) => f !== "").map((f) => parseInt(f));
+
     if (flechasInt.some((f) => isNaN(f))) {
       alert("Completa todos los valores (0-10)");
       return;
     }
+
+    const ronda = rondas.find((r) => r.numeroRonda === parseInt(rondaSel));
+    if (!ronda) return;
+
+    const inscrito = inscritos.find(
+      (i) => i.idUsuario === parseInt(usuarioSel),
+    );
+    if (!inscrito) return;
+
     setGuardandoPuntaje(true);
     try {
-      await torneoService.registrarPuntajes(
-        idTorneo,
-        usuarioSel,
-        rondaSel,
-        flechasInt,
-      );
+      await torneoService.registrarPuntaje({
+        idRonda: ronda.idRonda,
+        idParticipacion: inscrito.idParticipacion,
+        idAdmin: 1,
+        flechas: flechasInt,
+        posicionArquero: inscrito.posicionArquero || null,
+        posicionDiana: inscrito.posicionDiana || null,
+      });
       alert("Puntajes guardados correctamente");
+      cargarDatos();
     } catch (err) {
       alert("Error al guardar puntajes");
     } finally {
@@ -155,7 +164,6 @@ export default function TorneoDetalleView() {
         onVolver={() => navigate("/admin/torneos")}
       />
 
-      {/* Botón para mostrar/ocultar mapa */}
       <div className="mb-3">
         <button
           className="btn btn-outline-dark"
@@ -165,7 +173,6 @@ export default function TorneoDetalleView() {
         </button>
       </div>
 
-      {/* Mapa del torneo */}
       {mostrarMapa && <MapaTorneo torneo={torneo} inscritos={inscritos} />}
 
       <div className="row">

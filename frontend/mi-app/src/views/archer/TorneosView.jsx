@@ -14,18 +14,6 @@ export default function TorneosView() {
   const [success, setSuccess] = useState("");
   const [inscribiendo, setInscribiendo] = useState(null);
 
-  // Modal de inscripción con coordenadas
-  const [showModal, setShowModal] = useState(false);
-  const [torneoSeleccionado, setTorneoSeleccionado] = useState(null);
-  const [coordsArquero, setCoordsArquero] = useState({
-    lat: "-33.448",
-    lng: "-70.634",
-  });
-  const [coordsBlanco, setCoordsBlanco] = useState({
-    lat: "-33.4485",
-    lng: "-70.634",
-  });
-
   const cargarTorneos = useCallback(async () => {
     if (!user?.idUsuario) return;
     try {
@@ -59,40 +47,17 @@ export default function TorneosView() {
     cargarTorneos();
   }, [cargarTorneos]);
 
-  const abrirModalInscripcion = (torneo) => {
-    setTorneoSeleccionado(torneo);
-    setCoordsArquero({ lat: "-33.448", lng: "-70.634" });
-    setCoordsBlanco({ lat: "-33.4485", lng: "-70.634" });
-    setShowModal(true);
-  };
-
-  const handleInscribir = async () => {
-    if (!torneoSeleccionado) return;
+  const handleInscribir = async (torneo) => {
     setError("");
     setSuccess("");
-    setInscribiendo(torneoSeleccionado.idTorneo);
+    setInscribiendo(torneo.idTorneo);
 
     try {
       await apiParticipaciones.inscribirArquero(
-        torneoSeleccionado.idTorneo,
+        torneo.idTorneo,
         user.idUsuario,
-        JSON.stringify({
-          type: "Point",
-          coordinates: [
-            parseFloat(coordsArquero.lng),
-            parseFloat(coordsArquero.lat),
-          ],
-        }),
-        JSON.stringify({
-          type: "Point",
-          coordinates: [
-            parseFloat(coordsBlanco.lng),
-            parseFloat(coordsBlanco.lat),
-          ],
-        }),
       );
       setSuccess("¡Inscripción exitosa!");
-      setShowModal(false);
       cargarTorneos();
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
@@ -159,7 +124,6 @@ export default function TorneosView() {
         </li>
       </ul>
 
-      {/* Torneos Disponibles */}
       {activeTab === "disponibles" &&
         (torneos.length === 0 ? (
           <div className="text-center py-5 text-muted">
@@ -171,16 +135,30 @@ export default function TorneosView() {
               <div key={torneo.idTorneo} className="col-md-6 mb-3">
                 <div className="card shadow-sm h-100">
                   <div className="card-body">
-                    <h5 className="card-title">{torneo.nombreTorneo}</h5>
+                    <h5 className="card-title text-dark">
+                      {torneo.nombreTorneo}
+                    </h5>
                     <p className="text-muted small">
                       {torneo.fechaInicio} → {torneo.fechaTermino}
+                    </p>
+                    <p className="text-muted small">
+                      Plazas: {torneo.nroPlazaActual ?? 0}/
+                      {torneo.nroPlazaMax ?? "?"}
                     </p>
                     {getEstadoBadge(torneo.estadoTorneo)}
                     <button
                       className="btn btn-dark btn-sm mt-2 w-100"
-                      onClick={() => abrirModalInscripcion(torneo)}
+                      onClick={() => handleInscribir(torneo)}
+                      disabled={
+                        inscribiendo === torneo.idTorneo ||
+                        torneo.nroPlazaActual >= torneo.nroPlazaMax
+                      }
                     >
-                      Inscribirme
+                      {inscribiendo === torneo.idTorneo
+                        ? "Inscribiendo..."
+                        : torneo.nroPlazaActual >= torneo.nroPlazaMax
+                          ? "Sin plazas"
+                          : "Inscribirme"}
                     </button>
                   </div>
                 </div>
@@ -189,7 +167,6 @@ export default function TorneosView() {
           </div>
         ))}
 
-      {/* Torneos Inscritos */}
       {activeTab === "inscritos" &&
         (inscritos.length === 0 ? (
           <div className="text-center py-5 text-muted">
@@ -204,7 +181,7 @@ export default function TorneosView() {
               >
                 <div className="card shadow-sm h-100">
                   <div className="card-body">
-                    <h5 className="card-title">
+                    <h5 className="card-title text-dark">
                       {torneo.nombre_torneo || torneo.nombreTorneo}
                     </h5>
                     <p className="text-muted small">
@@ -220,132 +197,6 @@ export default function TorneosView() {
             ))}
           </div>
         ))}
-
-      {/* Modal de Inscripción con Coordenadas */}
-      {showModal && (
-        <div
-          className="modal d-block"
-          tabIndex="-1"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header bg-dark text-white">
-                <h5 className="modal-title">
-                  📍 Inscribirse en: {torneoSeleccionado?.nombreTorneo}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close btn-close-white"
-                  onClick={() => setShowModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="alert alert-info small mb-3">
-                  <strong>ℹ️</strong>
-                  Debes estar dentro de la zona de competencia y a menos de 5
-                  metros de la línea de tiro. Usa el preset de Santiago o
-                  ingresa tus coordenadas manualmente.
-                </div>
-
-                <h6>Tu Ubicación (Arquero)</h6>
-                <div className="row g-2 mb-3">
-                  <div className="col-6">
-                    <label className="form-label small">Latitud</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={coordsArquero.lat}
-                      onChange={(e) =>
-                        setCoordsArquero({
-                          ...coordsArquero,
-                          lat: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="col-6">
-                    <label className="form-label small">Longitud</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={coordsArquero.lng}
-                      onChange={(e) =>
-                        setCoordsArquero({
-                          ...coordsArquero,
-                          lng: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <h6>Ubicación del Blanco</h6>
-                <div className="row g-2 mb-3">
-                  <div className="col-6">
-                    <label className="form-label small">Latitud</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={coordsBlanco.lat}
-                      onChange={(e) =>
-                        setCoordsBlanco({
-                          ...coordsBlanco,
-                          lat: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="col-6">
-                    <label className="form-label small">Longitud</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={coordsBlanco.lng}
-                      onChange={(e) =>
-                        setCoordsBlanco({
-                          ...coordsBlanco,
-                          lng: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary btn-sm w-100 mb-2"
-                  onClick={() => {
-                    setCoordsArquero({ lat: "-33.448", lng: "-70.634" });
-                    setCoordsBlanco({ lat: "-33.4485", lng: "-70.634" });
-                  }}
-                >
-                  📍 Usar preset Santiago
-                </button>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-dark"
-                  onClick={handleInscribir}
-                  disabled={inscribiendo === torneoSeleccionado?.idTorneo}
-                >
-                  {inscribiendo === torneoSeleccionado?.idTorneo
-                    ? "Inscribiendo..."
-                    : "Confirmar Inscripción"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

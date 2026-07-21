@@ -57,6 +57,7 @@ export default function FormCrearTorneo({
     fechaInicio: "",
     fechaTermino: "",
     numeroRondas: 1,
+    nroPlazaMax: 10,
   });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
@@ -85,7 +86,6 @@ export default function FormCrearTorneo({
       })
       .catch((err) => {
         console.error("Error al cargar categorias:", err);
-
         if (!ignore) {
           setError("No se pudieron cargar las categorias.");
         }
@@ -102,7 +102,11 @@ export default function FormCrearTorneo({
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value =
+      e.target.name === "nroPlazaMax"
+        ? parseInt(e.target.value) || 1
+        : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
     if (error) setError("");
   };
 
@@ -144,6 +148,7 @@ export default function FormCrearTorneo({
         idCategoria: parseInt(formData.idCategoria),
         fechaInicio: formData.fechaInicio,
         fechaTermino: formData.fechaTermino,
+        nroPlazaMax: formData.nroPlazaMax,
         geomZonaCompetencia: JSON.stringify(zonaGeoJSON),
         lineaTiro: JSON.stringify(lineaGeoJSON),
       });
@@ -155,13 +160,11 @@ export default function FormCrearTorneo({
 
       if (torneoCreado) {
         const promesasRondas = [];
-
         for (let i = 1; i <= parseInt(formData.numeroRondas); i++) {
           promesasRondas.push(
             torneoService.crearRonda(torneoCreado.idTorneo, i),
           );
         }
-
         await Promise.all(promesasRondas);
       }
 
@@ -274,6 +277,26 @@ export default function FormCrearTorneo({
               </select>
             </div>
             <div className="col-md-3">
+              <label className="form-label fw-bold">N° Plazas *</label>
+              <input
+                type="number"
+                className="form-control"
+                name="nroPlazaMax"
+                value={formData.nroPlazaMax}
+                onChange={handleChange}
+                min="1"
+                max="100"
+                required
+                disabled={guardando || categorias.length === 0}
+              />
+              <small className="text-muted">
+                Ancho necesario: {formData.nroPlazaMax * 5}m
+              </small>
+            </div>
+          </div>
+
+          <div className="row g-3 mb-4">
+            <div className="col-md-3">
               <label className="form-label fw-bold">N° Rondas *</label>
               <input
                 type="number"
@@ -287,10 +310,7 @@ export default function FormCrearTorneo({
                 disabled={guardando || categorias.length === 0}
               />
             </div>
-          </div>
-
-          <div className="row g-3 mb-4">
-            <div className="col-md-6">
+            <div className="col-md-4">
               <label className="form-label fw-bold">Fecha Inicio *</label>
               <input
                 type="date"
@@ -303,8 +323,8 @@ export default function FormCrearTorneo({
                 min={minDate}
               />
             </div>
-            <div className="col-md-6">
-              <label className="form-label fw-bold">Fecha Termino *</label>
+            <div className="col-md-5">
+              <label className="form-label fw-bold">Fecha Término *</label>
               <input
                 type="date"
                 className="form-control"
@@ -342,15 +362,10 @@ export default function FormCrearTorneo({
             ))}
           </div>
 
-          <div className="alert alert-info small">
-            <strong>Formato:</strong> Latitud y Longitud en grados decimales
-            WGS 84. Ej: Lat: -33.448, Lng: -70.634
-          </div>
-
           <div className="d-flex justify-content-end gap-2">
             <button
               type="button"
-              className="btn btn-outline-secondary"
+              className="btn btn-outline-dark"
               onClick={() => navigate("/admin/torneos")}
               disabled={guardando}
             >

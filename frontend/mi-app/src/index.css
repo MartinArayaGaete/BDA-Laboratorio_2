@@ -8,32 +8,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Asegurar que el contenido principal tenga texto oscuro */
-.bg-light .content-area,
-.bg-light h1,
-.bg-light h2,
-.bg-light h3,
-.bg-light h4,
-.bg-light h5,
-.bg-light h6,
-.bg-light p,
-.bg-light label,
-.bg-light span:not(.badge):not(.text-white):not(.text-*) {
-  color: #212529 !important;
-}
-
-/* También para elementos específicos dentro del área de contenido */
-.flex-grow-1 h1,
-.flex-grow-1 h2,
-.flex-grow-1 h3,
-.flex-grow-1 h4,
-.flex-grow-1 h5,
-.flex-grow-1 h6,
-.flex-grow-1 p,
-.flex-grow-1 label,
-.flex-grow-1 th,
-.flex-grow-1 td {
-  color: #212529;
+.flex-grow-1 .card.bg-dark h2,
+.flex-grow-1 .card.bg-dark h6,
+.flex-grow-1 .card.bg-dark p,
+.flex-grow-1 .card.bg-dark small {
+  color: #ffffff !important;
 }
 
 /* Excepciones para badges y alertas */

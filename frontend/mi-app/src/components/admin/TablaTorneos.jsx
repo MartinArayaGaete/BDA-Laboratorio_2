@@ -32,8 +32,12 @@ export default function TablaTorneos({ torneos }) {
                 <p className="text-muted small mb-2">
                   {torneo.fechaInicio} → {torneo.fechaTermino}
                 </p>
+                <p className="text-muted small mb-2">
+                  Plazas: {torneo.nroPlazaActual ?? 0}/
+                  {torneo.nroPlazaMax ?? "?"}
+                </p>
                 <button
-                  className="btn btn-outline-primary btn-sm w-100"
+                  className="btn btn-outline-dark btn-sm w-100"
                   onClick={() => navigate(`/admin/torneos/${torneo.idTorneo}`)}
                 >
                   Gestionar Torneo

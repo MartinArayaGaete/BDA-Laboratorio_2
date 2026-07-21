@@ -23,11 +23,11 @@ const rondaService = {
     return response.data;
   },
 
-  asignarZonaAmbiental: async (idRonda, zonaData) => {
-    const response = await api.post(
-      `/rondas/${idRonda}/zona-ambiental`,
-      zonaData,
-    );
+  // ✅ CORREGIDO: PUT en vez de POST
+  asignarZonaAmbiental: async (idRonda, idZonaAmbiental) => {
+    const response = await api.put(`/rondas/${idRonda}/zona-ambiental`, {
+      idZonaAmbiental,
+    });
     return response.data;
   },
 };

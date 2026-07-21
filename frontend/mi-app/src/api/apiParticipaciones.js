@@ -1,7 +1,6 @@
 import api from "./api";
 
 const apiParticipaciones = {
-  // Obtener todas las participaciones
   obtenerTodas: async () => {
     try {
       const response = await api.get("/participaciones");
@@ -11,7 +10,6 @@ const apiParticipaciones = {
     }
   },
 
-  // Obtener inscritos por torneo
   obtenerInscritosPorTorneo: async (idTorneo) => {
     try {
       const response = await api.get(`/participaciones/torneo/${idTorneo}`);
@@ -21,7 +19,6 @@ const apiParticipaciones = {
     }
   },
 
-  // Obtener datos completos del torneo (zona + arqueros + posiciones + blancos)
   obtenerDatosCompletosTorneo: async (idTorneo) => {
     const response = await api.get(
       `/participaciones/torneo/${idTorneo}/completo`,
@@ -29,23 +26,15 @@ const apiParticipaciones = {
     return response.data;
   },
 
-  // Inscribir arquero en torneo
-  inscribirArquero: async (
-    idTorneo,
-    idUsuario,
-    ubicacionArquero,
-    ubicacionBlanco,
-  ) => {
+  // CORREGIDO: Solo envía idUsuario e idTorneo
+  inscribirArquero: async (idTorneo, idUsuario) => {
     const response = await api.post("/participaciones/inscribir", {
-      idTorneo,
       idUsuario,
-      ubicacionArquero,
-      ubicacionBlanco,
+      idTorneo,
     });
     return response.data;
   },
 
-  // Desinscribir arquero de torneo
   desinscribirArquero: async (idTorneo, idUsuario) => {
     const response = await api.delete("/participaciones/desinscribir", {
       params: { idTorneo, idUsuario },
@@ -53,7 +42,6 @@ const apiParticipaciones = {
     return response.data;
   },
 
-  // Obtener torneos inscritos de un usuario
   obtenerTorneosInscritos: async (idUsuario) => {
     try {
       const response = await api.get(`/participaciones/usuario/${idUsuario}`);

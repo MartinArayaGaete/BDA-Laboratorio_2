@@ -11,7 +11,6 @@ import Basemap from "../../components/maps/Basemap.jsx";
 import PolygonsLayer from "../../components/maps/PolygonsLayer.jsx";
 import FitBoundsFromPolygonLayer from "../../components/maps/FitBoundsFromPolygonLayer.jsx";
 
-
 export default function TorneoDetalleView() {
   const { idTorneo } = useParams();
   const navigate = useNavigate();
@@ -26,7 +25,7 @@ export default function TorneoDetalleView() {
 
   const [usuarioSel, setUsuarioSel] = useState("");
   const [rondaSel, setRondaSel] = useState("");
-  const [flechas, setFlechas] = useState(["", ""]);
+  const [flechas, setFlechas] = useState(["", "", "", "", "", ""]);
   const [guardandoPuntaje, setGuardandoPuntaje] = useState(false);
 
   const cargarDatos = useCallback(async () => {
@@ -41,7 +40,6 @@ export default function TorneoDetalleView() {
 
       setTorneo(torneoActual);
 
-      // Cargar datos del torneo desde los servicios disponibles
       const [datosCompletos, rondasData, podioData] = await Promise.all([
         apiParticipaciones
           .obtenerDatosCompletosTorneo(idTorneo)
@@ -55,7 +53,6 @@ export default function TorneoDetalleView() {
           : Promise.resolve([]),
       ]);
 
-      // Los arqueros vienen con ubicacionArquero y ubicacionBlanco
       setInscritos(datosCompletos?.arqueros || []);
       setRondas(rondasData);
       setPodio(podioData);
@@ -73,22 +70,20 @@ export default function TorneoDetalleView() {
 
   useEffect(() => {
     if (!usuarioSel || !rondaSel || torneo?.estadoTorneo !== "IN_COURSE") {
-      queueMicrotask(() => setFlechas(["", ""]));
+      setFlechas(["", "", "", "", "", ""]);
       return;
     }
 
-    void api
-      .get(
-        `/torneos/${idTorneo}/rondas/${rondaSel}/arqueros/${usuarioSel}/flechas`,
-      )
-      .then((res) => {
-        setFlechas(
-          res.data?.length
-            ? res.data.map((f) => f.puntaje.toString())
-            : ["", ""],
-        );
+    torneoService
+      .obtenerPosicionArqueroEnRonda(idTorneo, rondaSel, usuarioSel)
+      .then((data) => {
+        if (data?.flechas?.length) {
+          setFlechas(data.flechas.map((f) => f.toString()));
+        } else {
+          setFlechas(["", "", "", "", "", ""]);
+        }
       })
-      .catch(() => setFlechas(["", ""]));
+      .catch(() => setFlechas(["", "", "", "", "", ""]));
   }, [idTorneo, rondaSel, torneo?.estadoTorneo, usuarioSel]);
 
   const handleIniciarTorneo = async () => {
@@ -115,20 +110,35 @@ export default function TorneoDetalleView() {
 
   const handleGuardarPuntaje = async (e) => {
     e.preventDefault();
-    const flechasInt = flechas.map((f) => Number.parseInt(f, 10));
+    const flechasInt = flechas
+      .filter((f) => f !== "")
+      .map((f) => Number.parseInt(f, 10));
+
     if (flechasInt.some((f) => Number.isNaN(f))) {
       alert("Completa todos los valores (0-10)");
       return;
     }
+
+    const ronda = rondas.find((r) => r.numeroRonda === parseInt(rondaSel));
+    if (!ronda) return;
+
+    const participacion = inscritos.find(
+      (i) => i.idUsuario === parseInt(usuarioSel),
+    );
+    if (!participacion) return;
+
     setGuardandoPuntaje(true);
     try {
-      await torneoService.registrarPuntajes(
-        idTorneo,
-        usuarioSel,
-        rondaSel,
-        flechasInt,
-      );
+      await torneoService.registrarPuntaje({
+        idRonda: ronda.idRonda,
+        idParticipacion: participacion.idParticipacion,
+        idAdmin: 1,
+        flechas: flechasInt,
+        posicionArquero: participacion.posicionArquero || null,
+        posicionDiana: participacion.posicionDiana || null,
+      });
       alert("Puntajes guardados correctamente");
+      cargarDatos();
     } catch {
       alert("Error al guardar puntajes");
     } finally {
@@ -158,28 +168,20 @@ export default function TorneoDetalleView() {
         onVolver={() => navigate("/admin/torneos")}
       />
 
-      {/* Botón para mostrar/ocultar mapa */}
       <div className="mb-3">
         <button
           className="btn btn-outline-dark"
           onClick={() => setMostrarMapa(!mostrarMapa)}
         >
-          {mostrarMapa ? "🗺️ Ocultar Mapa" : "🗺️ Mostrar Mapa"}
+          {mostrarMapa ? "Ocultar Mapa" : "Mostrar Mapa"}
         </button>
       </div>
 
-      {/* Mapa del torneo */}
       {mostrarMapa && (
         <div style={{ width: "100%", height: "420px" }}>
           <Basemap>
-            <PolygonsLayer
-              data={torneo?.geomZonaCompetencia}
-            />
-            
-            <FitBoundsFromPolygonLayer
-              polygon={torneo?.geomZonaCompetencia}
-            />
-            
+            <PolygonsLayer data={torneo?.geomZonaCompetencia} />
+            <FitBoundsFromPolygonLayer polygon={torneo?.geomZonaCompetencia} />
           </Basemap>
         </div>
       )}

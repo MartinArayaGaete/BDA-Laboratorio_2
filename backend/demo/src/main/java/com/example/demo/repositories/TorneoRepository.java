@@ -29,20 +29,41 @@ public class TorneoRepository {
         t.setEstadoTorneo(rs.getString("estado_torneo"));
         t.setFechaInicio(rs.getObject("fecha_inicio", LocalDate.class));
         t.setFechaTermino(rs.getObject("fecha_termino", LocalDate.class));
-        t.setGeomZonaCompetencia(rs.getString("geom_zona_competencia"));
+        t.setGeomZonaCompetencia(rs.getString("espacio_torneo"));
+        t.setNroPlazaMax(rs.getInt("nro_plaza_max"));
+        t.setNroPlazaActual(rs.getInt("nro_plaza_actual"));
         return t;
     }
 
-    // NUEVO: Agregada la variable lineaTiro y la función de PostGIS al INSERT
-    public void crearTorneo(Long idCategoria, String nombre, String estado, LocalDate inicio, LocalDate termino, String geomZonaCompetencia, String lineaTiro) {
-        String sql = "INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino, geom_zona_competencia, linea_tiro) " +
-                "VALUES (?, ?, ?, ?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ST_SetSRID(ST_GeomFromGeoJSON(?), 4326))";
-        jdbcTemplate.update(sql, idCategoria, nombre, estado, inicio, termino, geomZonaCompetencia, lineaTiro);
+    public void crearTorneo(Long idCategoria, String nombre, String estado,
+                            LocalDate inicio, LocalDate termino,
+                            String geomZonaCompetencia, String lineaTiro,
+                            Integer nroPlazaMax) {
+        String sql = "INSERT INTO torneo (id_categoria, nombre_torneo, estado_torneo, " +
+                "fecha_inicio, fecha_termino, espacio_torneo, linea_de_tiro, " +
+                "nro_plaza_max, nro_plaza_actual) " +
+                "VALUES (?, ?, ?, ?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), " +
+                "ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ?, 0)";
+        jdbcTemplate.update(sql, idCategoria, nombre, estado, inicio, termino,
+                geomZonaCompetencia, lineaTiro, nroPlazaMax);
+    }
+
+    public int incrementarPlazaActual(Long idTorneo) {
+        String sql = "UPDATE torneo SET nro_plaza_actual = nro_plaza_actual + 1 " +
+                "WHERE id_torneo = ? AND nro_plaza_actual < nro_plaza_max";
+        return jdbcTemplate.update(sql, idTorneo);
+    }
+
+    public int decrementarPlazaActual(Long idTorneo) {
+        String sql = "UPDATE torneo SET nro_plaza_actual = nro_plaza_actual - 1 " +
+                "WHERE id_torneo = ? AND nro_plaza_actual > 0";
+        return jdbcTemplate.update(sql, idTorneo);
     }
 
     public List<Torneo> obtenerTodos() {
-        String sql = "SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino, " +
-                "ST_AsGeoJSON(geom_zona_competencia) AS geom_zona_competencia FROM torneo";
+        String sql = "SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, " +
+                "fecha_inicio, fecha_termino, nro_plaza_max, nro_plaza_actual, " +
+                "ST_AsGeoJSON(espacio_torneo) AS espacio_torneo FROM torneo";
         return jdbcTemplate.query(sql, (rs, rowNum) -> mapRowToTorneo(rs));
     }
 
@@ -60,7 +81,8 @@ public class TorneoRepository {
 
     public List<Map<String, Object>> obtenerTorneosPaginados(int page, int size) {
         String sql = """
-            SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino
+            SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, 
+                   fecha_inicio, fecha_termino, nro_plaza_max, nro_plaza_actual
             FROM torneo
             ORDER BY fecha_inicio DESC, id_torneo DESC
             LIMIT ? OFFSET ?
@@ -71,7 +93,8 @@ public class TorneoRepository {
 
     public List<Map<String, Object>> obtenerTorneosPorEstadoPaginados(String estadoTorneo, int page, int size) {
         String sql = """
-            SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino
+            SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, 
+                   fecha_inicio, fecha_termino, nro_plaza_max, nro_plaza_actual
             FROM torneo
             WHERE estado_torneo = ?
             ORDER BY fecha_inicio DESC, id_torneo DESC
@@ -82,8 +105,10 @@ public class TorneoRepository {
     }
 
     public Optional<Torneo> buscarPorId(Long idTorneo) {
-        String sql = "SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino, " +
-                "ST_AsGeoJSON(geom_zona_competencia) AS geom_zona_competencia FROM torneo WHERE id_torneo = ?";
+        String sql = "SELECT id_torneo, id_categoria, nombre_torneo, estado_torneo, " +
+                "fecha_inicio, fecha_termino, nro_plaza_max, nro_plaza_actual, " +
+                "ST_AsGeoJSON(espacio_torneo) AS espacio_torneo " +
+                "FROM torneo WHERE id_torneo = ?";
         try {
             return Optional.ofNullable(jdbcTemplate.queryForObject(sql, (rs, rowNum) -> mapRowToTorneo(rs), idTorneo));
         } catch (EmptyResultDataAccessException e) {
@@ -129,6 +154,7 @@ public class TorneoRepository {
             FROM torneo t
             LEFT JOIN participacion p ON t.id_torneo = p.id_torneo AND p.id_usuario = ?
             WHERE t.estado_torneo = 'NOT_STARTED' AND p.id_participacion IS NULL
+            AND t.nro_plaza_actual < t.nro_plaza_max
             """;
         Long count = jdbcTemplate.queryForObject(sql, Long.class, idUsuario);
         return count != null ? count : 0;
@@ -137,11 +163,14 @@ public class TorneoRepository {
     public List<Map<String, Object>> obtenerTorneosDisponiblesPaginados(Long idUsuario, int page, int size) {
         String sql = """
             SELECT DISTINCT t.id_torneo, t.nombre_torneo, t.estado_torneo, 
-                   t.fecha_inicio, t.fecha_termino, t.id_categoria, c.nombre_categoria
+                   t.fecha_inicio, t.fecha_termino, t.id_categoria, c.nombre_categoria,
+                   t.nro_plaza_max, t.nro_plaza_actual,
+                   (t.nro_plaza_max - t.nro_plaza_actual) as plazas_disponibles
             FROM torneo t
             LEFT JOIN participacion p ON t.id_torneo = p.id_torneo AND p.id_usuario = ?
             LEFT JOIN categoria c ON t.id_categoria = c.id_categoria
             WHERE t.estado_torneo = 'NOT_STARTED' AND p.id_participacion IS NULL
+            AND t.nro_plaza_actual < t.nro_plaza_max
             ORDER BY t.fecha_inicio ASC
             LIMIT ? OFFSET ?
             """;
@@ -149,17 +178,14 @@ public class TorneoRepository {
         return jdbcTemplate.queryForList(sql, idUsuario, size, offset);
     }
 
-
-    // NUEVO: Obtiene los climas asociados a un torneo específico
     public List<String> obtenerClimasPorTorneo(Long idTorneo) {
-    String sql = """
-        SELECT DISTINCT ca.categoria_ambiental
-        FROM torneo t
-        JOIN sectores_ambientales sa ON ST_Intersects(t.geom_zona_competencia, sa.territorio)
-        JOIN categoria_ambiental ca ON sa.id_categoria_ambiental = ca.id_categoria_ambiental
-        WHERE t.id_torneo = ?
-    """;
-
-    return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("categoria_ambiental"), idTorneo);
+        String sql = """
+            SELECT DISTINCT ca.categoria_ambiental
+            FROM torneo t
+            JOIN sectores_ambientales sa ON ST_Intersects(t.espacio_torneo, sa.territorio)
+            JOIN categoria_ambiental ca ON sa.id_categoria_ambiental = ca.id_categoria_ambiental
+            WHERE t.id_torneo = ?
+        """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("categoria_ambiental"), idTorneo);
     }
 }

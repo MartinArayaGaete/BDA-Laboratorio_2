@@ -79,7 +79,11 @@ public class FlechaRepository {
                             "CALL registrar_puntaje_ronda(?, ?, ?, ?, ST_SetSRID(ST_GeomFromGeoJSON(?), 4326), ST_SetSRID(ST_GeomFromGeoJSON(?), 4326))");
                     cs.setLong(1, idRonda);
                     cs.setLong(2, idParticipacion);
-                    cs.setArray(3, connection.createArrayOf("numeric", flechas.toArray(new Integer[0])));
+                    if (flechas == null || flechas.isEmpty()) {
+                        cs.setArray(3, connection.createArrayOf("numeric", new Integer[0]));
+                    } else {
+                        cs.setArray(3, connection.createArrayOf("numeric", flechas.toArray(new Integer[0])));
+                    }
                     cs.setLong(4, idAdmin);
                     cs.setString(5, posicionArquero);
                     cs.setString(6, posicionDiana);

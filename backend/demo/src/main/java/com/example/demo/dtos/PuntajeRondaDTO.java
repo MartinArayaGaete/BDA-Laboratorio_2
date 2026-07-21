@@ -12,7 +12,7 @@ public class PuntajeRondaDTO {
     private Long idRonda;
     private Long idParticipacion;
     private Long idAdmin;
-    private List<Integer> flechas;
-    private String posicionArquero;  //  Geo Point
-    private String posicionDiana;    // Geo Point
+    private List<Integer> flechas;        // Puede ser null para solo posicionar
+    private String posicionArquero;
+    private String posicionDiana;
 }

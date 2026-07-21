@@ -36,7 +36,8 @@ public class TorneoService {
                 dto.getFechaInicio(),
                 dto.getFechaTermino(),
                 dto.getGeomZonaCompetencia(),
-                dto.getLineaTiro() // <-- NUEVO: Pasamos la variable al repositorio
+                dto.getLineaTiro(),
+                dto.getNroPlazaMax()
         );
     }
 
@@ -98,7 +99,9 @@ public class TorneoService {
                     (String) row.get("estado_torneo"),
                     (LocalDate) row.get("fecha_inicio"),
                     (LocalDate) row.get("fecha_termino"),
-                    (String) row.get("geom_zona_competencia")
+                    (String) row.get("geom_zona_competencia"),
+                    row.get("nro_plaza_max") != null ? ((Number) row.get("nro_plaza_max")).intValue() : 0,
+                    row.get("nro_plaza_actual") != null ? ((Number) row.get("nro_plaza_actual")).intValue() : 0
             );
             torneos.add(dto);
         }
@@ -145,7 +148,6 @@ public class TorneoService {
         }
     }
 
-
     public List<InscritoDTO> obtenerPodio(Long idTorneo) {
         if (torneoRepository.buscarPorId(idTorneo).isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado");
@@ -165,8 +167,7 @@ public class TorneoService {
         }
     }
 
-    // Método para obtener los climas asociados a un torneo específico
     public List<String> obtenerClimasPorTorneo(Long idTorneo) {
-    return torneoRepository.obtenerClimasPorTorneo(idTorneo);
+        return torneoRepository.obtenerClimasPorTorneo(idTorneo);
     }
 }

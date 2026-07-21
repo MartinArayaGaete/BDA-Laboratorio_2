@@ -10,11 +10,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Torneo {
     private Long idTorneo;
-    private Long idCategoria; // FK
+    private Long idCategoria;
     private String nombreTorneo;
     private String estadoTorneo;
     private LocalDate fechaInicio;
     private LocalDate fechaTermino;
-    private String geomZonaCompetencia; // Geometria poligono
-    private String lineaTiro; // Geometria LineString
+    private String geomZonaCompetencia;
+    private String lineaTiro;
+    private Integer nroPlazaMax;
+    private Integer nroPlazaActual;
 }

@@ -22,20 +22,13 @@ public class TorneosDisponiblesService {
         this.torneoRepository = torneoRepository;
     }
 
-    /**
-     * Obtiene los torneos disponibles para un usuario de forma paginada.
-     * Los torneos disponibles son aquellos en estado NOT_STARTED donde el usuario no está inscrito.
-     */
     public TorneosDisponiblesResponse obtenerTorneosDisponibles(Long idUsuario, int page, int size) {
-        // Validar parámetros de paginación
         if (page < 0 || size <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Los parámetros de paginación son inválidos");
         }
 
-        // Obtener total de torneos disponibles para este usuario
         Long totalElements = torneoRepository.contarTorneosDisponibles(idUsuario);
 
-        // Si no hay torneos disponibles
         if (totalElements == 0) {
             return new TorneosDisponiblesResponse(
                     new ArrayList<>(),
@@ -46,19 +39,15 @@ public class TorneosDisponiblesService {
             );
         }
 
-        // Calcular total de páginas
         Integer totalPages = (int) Math.ceil((double) totalElements / size);
 
-        // Validar que la página solicitada existe
         if (page >= totalPages) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, 
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La página solicitada no existe. Máximo: " + (totalPages - 1));
         }
 
-        // Obtener torneos disponibles paginados
         List<Map<String, Object>> torneosData = torneoRepository.obtenerTorneosDisponiblesPaginados(idUsuario, page, size);
 
-        // Convertir Maps a DTOs
         List<TorneoDisponibleDTO> torneos = new ArrayList<>();
         for (Map<String, Object> torneo : torneosData) {
             Long idTorneo = asLong(torneo.get("id_torneo"));
@@ -68,6 +57,9 @@ public class TorneosDisponiblesService {
             LocalDate fechaTermino = asLocalDate(torneo.get("fecha_termino"));
             Long idCategoria = asLong(torneo.get("id_categoria"));
             String nombreCategoria = asString(torneo.get("nombre_categoria"));
+            Integer nroPlazaMax = asInteger(torneo.get("nro_plaza_max"));
+            Integer nroPlazaActual = asInteger(torneo.get("nro_plaza_actual"));
+            Integer plazasDisponibles = asInteger(torneo.get("plazas_disponibles"));
 
             TorneoDisponibleDTO dto = new TorneoDisponibleDTO(
                     idTorneo,
@@ -76,7 +68,10 @@ public class TorneosDisponiblesService {
                     fechaInicio,
                     fechaTermino,
                     idCategoria,
-                    nombreCategoria
+                    nombreCategoria,
+                    nroPlazaMax,
+                    nroPlazaActual,
+                    plazasDisponibles
             );
             torneos.add(dto);
         }
@@ -92,6 +87,10 @@ public class TorneosDisponiblesService {
 
     private Long asLong(Object value) {
         return value == null ? null : ((Number) value).longValue();
+    }
+
+    private Integer asInteger(Object value) {
+        return value == null ? 0 : ((Number) value).intValue();
     }
 
     private String asString(Object value) {

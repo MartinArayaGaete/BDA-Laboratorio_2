@@ -36,9 +36,11 @@ public class FlechaService {
 
     @Transactional
     public void registrarRondaCompletaDTO(PuntajeRondaDTO request) {
-        for (Integer puntaje : request.getFlechas()) {
-            if (puntaje < 0 || puntaje > 10) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Puntaje inválido");
+        if (request.getFlechas() != null && !request.getFlechas().isEmpty()) {
+            for (Integer puntaje : request.getFlechas()) {
+                if (puntaje < 0 || puntaje > 10) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Puntaje inválido");
+                }
             }
         }
 
@@ -55,7 +57,10 @@ public class FlechaService {
     }
 
     private void registrarLogSistema(PuntajeRondaDTO request) {
-        System.out.println("Log: El admin " + request.getIdAdmin() + " registró puntajes.");
+        String info = request.getFlechas() != null && !request.getFlechas().isEmpty()
+                ? "registró puntajes"
+                : "posicionó arquero y diana";
+        System.out.println("Log: El admin " + request.getIdAdmin() + " " + info + ".");
     }
 
     public List<LeaderboardDTO> obtenerLeaderboard() {

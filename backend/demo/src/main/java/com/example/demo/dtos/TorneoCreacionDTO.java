@@ -1,9 +1,9 @@
 package com.example.demo.dtos;
 
-import java.time.LocalDate;
-import lombok.Data;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
@@ -15,4 +15,5 @@ public class TorneoCreacionDTO {
     private LocalDate fechaTermino;
     private String geomZonaCompetencia;
     private String lineaTiro;
+    private Integer nroPlazaMax;
 }

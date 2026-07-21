@@ -90,10 +90,9 @@ CREATE TABLE IF NOT EXISTS categoria_ambiental (
 CREATE TABLE IF NOT EXISTS ronda (
     id_ronda BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_torneo BIGINT NOT NULL,
-    id_zona_ambiental BIGINT NOT NULL,
+    id_zona_ambiental BIGINT,          -- NULLABLE, el admin la asigna si es que hay un clima
     numero_ronda INT NOT NULL,
-    categoria_ambiental VARCHAR(80) NOT NULL,
-    FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
+    FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE,
     FOREIGN KEY (id_zona_ambiental) REFERENCES sectores_ambientales(id_zona_ambiental) ON DELETE SET NULL
 );
 

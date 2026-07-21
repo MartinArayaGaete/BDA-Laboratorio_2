@@ -20,7 +20,6 @@ public class ParticipacionRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    // le quitamos los geo de posicion arq y diana
     public void inscribirUsuario(Long idUsuario, Long idTorneo) {
         String sql = "INSERT INTO participacion (id_usuario, id_torneo) VALUES (?, ?)";
         jdbcTemplate.update(sql, idUsuario, idTorneo);
@@ -79,30 +78,25 @@ public class ParticipacionRepository {
 
     public void actualizarPuntajeFinalConTrigger(Long idAdmin, Long idRondaAfectada, Integer puntajeFinal, Long idUsuario, Long idTorneo) {
         jdbcTemplate.execute((ConnectionCallback<Void>) conn -> {
-            
-            // Usamos try-with-resources para asegurar que los PreparedStatements se cierren
             try (
-                PreparedStatement ps1 = conn.prepareStatement("SET LOCAL my.user_id = ?");
-                PreparedStatement ps2 = conn.prepareStatement("SET LOCAL my.ronda_id = ?");
-                PreparedStatement ps3 = conn.prepareStatement(
-                    "UPDATE participacion SET puntaje_final = ? WHERE id_usuario = ? AND id_torneo = ?"
-                )
+                    PreparedStatement ps1 = conn.prepareStatement("SET LOCAL my.user_id = ?");
+                    PreparedStatement ps2 = conn.prepareStatement("SET LOCAL my.ronda_id = ?");
+                    PreparedStatement ps3 = conn.prepareStatement(
+                            "UPDATE participacion SET puntaje_final = ? WHERE id_usuario = ? AND id_torneo = ?"
+                    )
             ) {
-                // Seteamos el ID de quien hace el cambio (Para el Trigger)
                 ps1.setLong(1, idAdmin);
                 ps1.execute();
 
-                // Seteamos el ID de la ronda afectada (Para el Trigger)
                 ps2.setLong(1, idRondaAfectada);
                 ps2.execute();
 
-                // Ejecutamos el Update real de la tabla
                 ps3.setInt(1, puntajeFinal);
                 ps3.setLong(2, idUsuario);
                 ps3.setLong(3, idTorneo);
                 ps3.executeUpdate();
             }
-            return null; // El callback requiere retornar algo, mandamos null
+            return null;
         });
     }
 
@@ -117,20 +111,12 @@ public class ParticipacionRepository {
         return jdbcTemplate.queryForList(sql);
     }
 
-    /**
-     * Obtiene el total de participaciones de un usuario.
-     */
     public Long contarParticipacionesPorUsuario(Long idUsuario) {
         String sql = "SELECT COUNT(*) FROM participacion WHERE id_usuario = ?";
         Long count = jdbcTemplate.queryForObject(sql, Long.class, idUsuario);
         return count != null ? count : 0;
     }
 
-    /**
-     * Obtiene participaciones paginadas de un usuario, unidas con datos del torneo.
-     * Retorna Map con keys: id_participacion, id_torneo, nombre_torneo, puntaje_final, 
-     * posicion_final, fecha_inicio, estado_torneo
-     */
     public List<Map<String, Object>> obtenerHistorialPaginado(Long idUsuario, int page, int size) {
         String sql = """
             SELECT p.id_participacion, p.id_torneo, t.nombre_torneo, p.puntaje_final, 
@@ -145,9 +131,6 @@ public class ParticipacionRepository {
         return jdbcTemplate.queryForList(sql, idUsuario, size, offset);
     }
 
-    /**
-     * Obtiene estadisticas agregadas del arquero en una sola consulta.
-     */
     public Optional<Map<String, Object>> obtenerEstadisticasArquero(Long idUsuario) {
         String sql = """
             SELECT
@@ -170,15 +153,21 @@ public class ParticipacionRepository {
     }
 
     /**
-     *
-     * PROPUESTA (requisito estadisticas desempeño/
-     *
      * Obtiene el resumen de rendimiento de un arquero en un torneo específico.
-     * Calcula:
-     *  * - Puntaje final y posición en el torneo
-     *  * - Total de flechas lanzadas y promedio de puntos
-     *  * - Cantidad de rondas jugadas
-     *  * - Condiciones climáticas encontradas durante el torneo
+     *
+     * Calcula las siguientes métricas a partir de los puntajes registrados:
+     *  - Puntaje final acumulado y posición en el ranking del torneo
+     *  - Total de flechas lanzadas y promedio de puntos por flecha
+     *  - Cantidad de rondas en las que participó
+     *  - Factor ambiental de la primera ronda con zona climática asignada
+     *
+     * Si el arquero no tiene puntajes registrados, los valores numéricos
+     * retornan 0 y el factor ambiental se muestra como 'Sin categoría ambiental'.
+     *
+     * @param idTorneo  ID del torneo donde participó el arquero
+     * @param idUsuario ID del arquero
+     * @return Mapa con las estadísticas del arquero en ese torneo,
+     *         o Optional.empty() si no existe la participación
      */
     public Optional<Map<String, Object>> obtenerResumenPorTorneoYUsuario(Long idTorneo, Long idUsuario) {
         String sql = """
@@ -211,11 +200,6 @@ public class ParticipacionRepository {
         return Optional.of(result.get(0));
     }
 
-
-    /**
-     * Obtiene los torneos en los que un usuario está inscrito.
-     * Retorna Map con keys: id_torneo, nombre_torneo, estado_torneo, fecha_inicio, fecha_termino, id_participacion
-     */
     public List<Map<String, Object>> obtenerTorneosInscritosPorUsuario(Long idUsuario) {
         String sql = """
         SELECT t.id_torneo, t.nombre_torneo, t.estado_torneo, 
@@ -228,12 +212,6 @@ public class ParticipacionRepository {
         return jdbcTemplate.queryForList(sql, idUsuario);
     }
 
-
-    /**
-     * Obtiene todos los arqueros inscritos en un torneo.
-     * Las posiciones geoespaciales ahora están en puntaje_ronda,
-     * por lo que se obtienen desde allí.
-     */
     public List<Map<String, Object>> obtenerArquerosConPosiciones(Long idTorneo) {
         String sql = """
     SELECT 

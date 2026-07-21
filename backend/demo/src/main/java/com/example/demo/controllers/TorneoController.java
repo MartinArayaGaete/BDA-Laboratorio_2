@@ -109,9 +109,6 @@ public class TorneoController {
 
         @SuppressWarnings("unchecked")
         List<Integer> flechas = (List<Integer>) body.get("flechas");
-        if (flechas == null || flechas.isEmpty()) {
-            return ResponseEntity.badRequest().body("Falta enviar el arreglo 'flechas' en el JSON");
-        }
 
         String posicionArquero = body.get("posicionArquero") != null ? body.get("posicionArquero").toString() : null;
         String posicionDiana = body.get("posicionDiana") != null ? body.get("posicionDiana").toString() : null;

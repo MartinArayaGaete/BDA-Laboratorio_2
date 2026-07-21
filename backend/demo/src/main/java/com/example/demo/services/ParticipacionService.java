@@ -27,7 +27,6 @@ public class ParticipacionService {
         this.torneoRepository = torneoRepository;
     }
 
-    // Le quitamos la posición de arquero y diana, tambien la validación de posición que esperaba al trigger.
     @Transactional
     public void inscribirUsuario(Long idUsuario, Long idTorneo) {
         Torneo torneo = torneoRepository.buscarPorId(idTorneo)
@@ -42,6 +41,16 @@ public class ParticipacionService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "El arquero ya está inscrito en este torneo");
         }
 
+        if (torneo.getNroPlazaActual() >= torneo.getNroPlazaMax()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "No hay plazas disponibles. Máximo: " + torneo.getNroPlazaMax());
+        }
+
+        int updated = torneoRepository.incrementarPlazaActual(idTorneo);
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "No se pudo reservar la plaza");
+        }
+
         participacionRepository.inscribirUsuario(idUsuario, idTorneo);
     }
 
@@ -52,12 +61,12 @@ public class ParticipacionService {
 
         if (!"NOT_STARTED".equals(torneo.getEstadoTorneo())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "No se puede desinscribir: el torneo ya inició o finalizo.");
+                    "No se puede desinscribir: el torneo ya inició o finalizó.");
         }
 
         if (!participacionRepository.existeParticipacion(idUsuario, idTorneo)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "El arquero no esta inscrito en este torneo.");
+                    "El arquero no está inscrito en este torneo.");
         }
 
         if (participacionRepository.tieneFlechasRegistradasEnTorneo(idUsuario, idTorneo)) {
@@ -66,6 +75,7 @@ public class ParticipacionService {
         }
 
         participacionRepository.desinscribirUsuario(idUsuario, idTorneo);
+        torneoRepository.decrementarPlazaActual(idTorneo);
     }
 
     public List<InscritoDTO> obtenerInscritosPorTorneo(Long idTorneo) {
@@ -74,7 +84,8 @@ public class ParticipacionService {
 
     public Long obtenerIdParticipacion(Long idUsuario, Long idTorneo) {
         return participacionRepository.obtenerIdParticipacion(idUsuario, idTorneo)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No se encontró una participación para este usuario en este torneo."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No se encontró una participación para este usuario en este torneo."));
     }
 
     @Transactional
@@ -86,10 +97,6 @@ public class ParticipacionService {
         return participacionRepository.obtenerTodas();
     }
 
-    /**
-     * Obtiene el resumen de rendimiento de un arquero en un torneo.
-     * Incluye factores ambientales encontrados durante las rondas.
-     */
     public ResumenTorneoArqueroDTO obtenerResumenPorTorneoYUsuario(Long idTorneo, Long idUsuario) {
         Map<String, Object> resumen = participacionRepository.obtenerResumenPorTorneoYUsuario(idTorneo, idUsuario)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -129,18 +136,10 @@ public class ParticipacionService {
         );
     }
 
-
-    /**
-     * Obtiene los torneos en los que un usuario está inscrito.
-     */
     public List<Map<String, Object>> obtenerTorneosInscritos(Long idUsuario) {
         return participacionRepository.obtenerTorneosInscritosPorUsuario(idUsuario);
     }
 
-
-    /**
-     * Obtiene los datos completos de un torneo incluyendo posiciones de arqueros.
-     */
     public TorneoCompletoDTO obtenerDatosCompletosTorneo(Long idTorneo) {
         Torneo torneo = torneoRepository.buscarPorId(idTorneo)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
@@ -168,6 +167,4 @@ public class ParticipacionService {
 
         return dto;
     }
-
-
 }

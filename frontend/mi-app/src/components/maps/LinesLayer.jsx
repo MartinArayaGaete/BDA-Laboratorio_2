@@ -15,8 +15,6 @@ const DEFAULT_LAYOUT = {
 
 export default function LinesLayer({
   data,
-  lineData,
-  linesData,
   id,
   beforeId,
   paint,
@@ -27,7 +25,7 @@ export default function LinesLayer({
   const layerIdPrefix = id ?? `lines-${reactId}`;
   const sourceId = `${layerIdPrefix}-source`;
   const layerId = `${layerIdPrefix}-line`;
-  const layerData = data ?? linesData ?? lineData;
+  const layerData = data;
 
   const geojson = useMemo(() => {
     return toFeatureCollection(layerData, ["LineString", "MultiLineString"]);

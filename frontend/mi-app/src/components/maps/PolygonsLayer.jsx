@@ -17,8 +17,6 @@ const DEFAULT_LAYOUT = {};
 
 export default function PolygonsLayer({
   data,
-  polygonData,
-  polygonsData,
   id,
   beforeId,
   fillPaint,
@@ -32,7 +30,7 @@ export default function PolygonsLayer({
   const sourceId = `${layerIdPrefix}-source`;
   const fillLayerId = `${layerIdPrefix}-fill`;
   const lineLayerId = `${layerIdPrefix}-line`;
-  const layerData = data ?? polygonsData ?? polygonData;
+  const layerData = data;
 
   const geojson = useMemo(() => {
     return toFeatureCollection(layerData, ["Polygon", "MultiPolygon"]);

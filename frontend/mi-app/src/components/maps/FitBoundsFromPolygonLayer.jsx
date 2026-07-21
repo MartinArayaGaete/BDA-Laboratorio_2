@@ -90,11 +90,10 @@ function getBounds(points) {
 
 export default function FitBoundsFromPolygonLayer({
 	polygon,
-	geomZonaCompetencia,
 	padding = 40,
 }) {
 	const { map, ready } = useMap();
-	const geometryData = polygon ?? geomZonaCompetencia;
+	const geometryData = polygon;
 
 	const normalizedGeometry = useMemo(() => parseGeometry(geometryData), [geometryData]);
 

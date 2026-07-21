@@ -30,8 +30,7 @@ BEGIN
         SELECT
             id_participacion,
             DENSE_RANK() OVER (
-                ORDER BY COALESCE(puntaje_final, 0) DESC,
-                id_participacion ASC
+                ORDER BY COALESCE(puntaje_final, 0) DESC
             ) AS posicion
         FROM participacion
         WHERE id_torneo = p_id_torneo

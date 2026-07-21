@@ -14,8 +14,6 @@ const DEFAULT_LAYOUT = {};
 
 export default function PointsLayer({
   data,
-  pointData,
-  pointsData,
   id,
   beforeId,
   paint,
@@ -26,7 +24,7 @@ export default function PointsLayer({
   const layerIdPrefix = id ?? `points-${reactId}`;
   const sourceId = `${layerIdPrefix}-source`;
   const layerId = `${layerIdPrefix}-circle`;
-  const layerData = data ?? pointsData ?? pointData;
+  const layerData = data;
 
   const geojson = useMemo(() => {
     return toFeatureCollection(layerData, ["Point", "MultiPoint"]);

@@ -45,9 +45,9 @@ public class SecurityConfig {
 
                         //  Rutas Estrictas de Administrador
                         .requestMatchers(HttpMethod.POST, "/api/torneos").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/torneos/*/iniciar").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/torneos/*/finalizar").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/torneos/*/rondas/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/torneos/**/iniciar").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/torneos/**/finalizar").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/torneos/**/rondas/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/torneos/registrar-puntaje").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/logs", "/api/logs/**").hasRole("ADMIN")
 

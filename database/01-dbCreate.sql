@@ -71,20 +71,20 @@ CREATE TABLE IF NOT EXISTS participacion (
 );
 
 CREATE TABLE IF NOT EXISTS categoria_ambiental (
-    74     id_categoria_ambiental BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY
+         id_categoria_ambiental BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY
        KEY,
-    75     categoria_ambiental VARCHAR(80) NOT NULL
-    76 );
+         categoria_ambiental VARCHAR(80) NOT NULL
+     );
 
  CREATE TABLE IF NOT EXISTS sectores_ambientales (
-    79     id_zona_ambiental BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    80     id_categoria_ambiental BIGINT NOT NULL,
-    81     territorio GEOMETRY(Polygon, 4326),
-    82     FOREIGN KEY (id_categoria_ambiental)
-    83         REFERENCES categoria_ambiental(id_categoria_ambiental)
-    84         ON DELETE CASCADE
-    85 );
-    86
+         id_zona_ambiental BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+         id_categoria_ambiental BIGINT NOT NULL,
+         territorio GEOMETRY(Polygon, 4326),
+         FOREIGN KEY (id_categoria_ambiental)
+             REFERENCES categoria_ambiental(id_categoria_ambiental)
+             ON DELETE CASCADE
+     );
+    
 
 
 CREATE TABLE IF NOT EXISTS ronda (

@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS usuario (
 CREATE TABLE IF NOT EXISTS categoria (
     id_categoria BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     nombre_categoria VARCHAR(80) NOT NULL,
-    distancia_tiro INT 
+    distancia_tiro BIGINT 
 );
 
 CREATE TABLE IF NOT EXISTS logs (
@@ -37,8 +37,8 @@ CREATE TABLE IF NOT EXISTS logs (
     id_admin BIGINT NOT NULL,
     id_afectado BIGINT NOT NULL,
     fecha_editado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    torneo_afectado BIGINT NOT NULL,
-    ronda_afectada BIGINT NOT NULL,
+    torneo_afectado INT NOT NULL,
+    ronda_afectada INT NOT NULL,
     puntaje_anterior INT,
     puntaje_nuevo INT,
     FOREIGN KEY (id_admin) REFERENCES usuario(id_usuario),
@@ -52,8 +52,10 @@ CREATE TABLE IF NOT EXISTS torneo (
     estado_torneo VARCHAR(80) NOT NULL,
     fecha_inicio DATE NOT NULL,
     fecha_termino DATE NOT NULL,
-    geom_zona_competencia GEOMETRY(Polygon, 4326),
-    linea_tiro GEOMETRY(LineString, 4326),
+    espacio_torneo GEOMETRY(Polygon, 4326),
+    linea_de_tiro GEOMETRY(LineString, 4326),
+    nro_plaza_max INT,
+    nro_plaza_actual INT,
     FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria)
 );
 
@@ -68,11 +70,31 @@ CREATE TABLE IF NOT EXISTS participacion (
     FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS categoria_ambiental (
+    74     id_categoria_ambiental BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY
+       KEY,
+    75     categoria_ambiental VARCHAR(80) NOT NULL
+    76 );
+
+ CREATE TABLE IF NOT EXISTS sectores_ambientales (
+    79     id_zona_ambiental BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    80     id_categoria_ambiental BIGINT NOT NULL,
+    81     territorio GEOMETRY(Polygon, 4326),
+    82     FOREIGN KEY (id_categoria_ambiental)
+    83         REFERENCES categoria_ambiental(id_categoria_ambiental)
+    84         ON DELETE CASCADE
+    85 );
+    86
+
+
 CREATE TABLE IF NOT EXISTS ronda (
     id_ronda BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_torneo BIGINT NOT NULL,
+    id_zona_ambiental BIGINT NOT NULL,
     numero_ronda INT NOT NULL,
+    categoria_ambiental VARCHAR(80) NOT NULL,
     FOREIGN KEY (id_torneo) REFERENCES torneo(id_torneo) ON DELETE CASCADE
+    FOREIGN KEY (id_zona_ambiental) REFERENCES sectores_ambientales(id_zona_ambiental) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS puntaje_ronda (
@@ -102,24 +124,7 @@ CREATE TABLE IF NOT EXISTS flecha (
     puntaje INT NOT NULL,
     FOREIGN KEY (id_puntaje_ronda) REFERENCES puntaje_ronda(id_puntaje_ronda) ON DELETE CASCADE
 );
-CREATE TABLE IF NOT EXISTS categoria_ambiental (
-    id_categoria_ambiental BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    categoria_ambiental VARCHAR(80) NOT NULL
-);
 
-CREATE TABLE IF NOT EXISTS sectores_ambientales (
-    id_zona_ambiental BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    id_categoria_ambiental BIGINT NOT NULL,
-    territorio GEOMETRY(Polygon,4326),
-
-    FOREIGN KEY (id_categoria_ambiental)
-        REFERENCES categoria_ambiental(id_categoria_ambiental)
-        ON DELETE CASCADE
-);
-
-ALTER TABLE ronda
-ADD COLUMN IF NOT EXISTS id_zona_ambiental BIGINT,
-ADD FOREIGN KEY (id_zona_ambiental) REFERENCES sectores_ambientales(id_zona_ambiental);
 
 -- 3. ÍNDICES TRADICIONALES (B-Tree)
 CREATE INDEX idx_torneo_categoria ON torneo(id_categoria);

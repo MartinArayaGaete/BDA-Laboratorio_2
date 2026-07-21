@@ -38,25 +38,27 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        //  Rutas Públicas
+                        // Rutas Públicas
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/usuarios").permitAll()
 
-
-                        //  Rutas Estrictas de Administrador
+                        // Rutas Estrictas de Administrador
                         .requestMatchers(HttpMethod.POST, "/api/torneos").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/torneos/**/iniciar").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/torneos/**/finalizar").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/torneos/**/rondas/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/torneos/registrar-puntaje").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/logs", "/api/logs/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/rondas/*/zona-ambiental").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/sectores-ambientales").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/sectores-ambientales/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/categorias-ambientales").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/categorias-ambientales/*").hasRole("ADMIN")
 
-                        //  Rutas Compartidas
+                        // Rutas Compartidas
                         .requestMatchers(HttpMethod.POST, "/api/participaciones/inscribir").hasAnyRole("ADMIN", "ARQUERO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/participaciones/desinscribir").hasAnyRole("ADMIN", "ARQUERO")
                         .requestMatchers(HttpMethod.GET, "/api/torneos/leaderboard").hasAnyRole("ADMIN", "ARQUERO")
                         .requestMatchers(HttpMethod.GET, "/api/arqueros/rendimiento/ultimo-mes").hasAnyRole("ADMIN", "ARQUERO")
 
-                        //  Todas las demás rutas (GET a historiales, torneos, etc.) requieren estar autenticado
+                        // Todas las demás rutas requieren estar autenticado
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
@@ -68,14 +70,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(List.of(
-        "http://localhost:*",
-        "http://127.0.0.1:*",
-        "http://172.*.*.*:*"
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://172.*.*.*:*"
         ));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
-        
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

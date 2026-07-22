@@ -1,4 +1,5 @@
 // src/views/admin/CrearTorneoView.jsx
+import { useMemo } from "react";
 import FormCrearTorneo from "../../components/admin/FormCrearTorneo.jsx";
 import Basemap from "../../components/maps/Basemap.jsx";
 import LinesLayer from "../../components/maps/LinesLayer.jsx";
@@ -41,6 +42,28 @@ const LINEA_PAINT = {
   "line-width": 3,
 };
 
+const LABEL_PAINT = {
+  "text-color": "#111827",
+  "text-halo-color": "#ffffff",
+  "text-halo-width": 2,
+};
+
+const ZONA_LABEL_LAYOUT = {
+  "text-field": ["coalesce", ["get", "label"], ""],
+  "text-size": 14,
+  "text-anchor": "bottom",
+  "text-offset": [0, -0.8],
+  "text-allow-overlap": true,
+};
+
+const LINEA_LABEL_LAYOUT = {
+  "text-field": ["coalesce", ["get", "label"], ""],
+  "text-size": 14,
+  "text-anchor": "bottom",
+  "text-offset": [0, -1],
+  "text-allow-overlap": true,
+};
+
 export default function CrearTorneoView() {
   const {
     coordsZonaCompetencia,
@@ -54,6 +77,30 @@ export default function CrearTorneoView() {
     setSelectedPoint,
     resetSelection,
   } = useTorneoMapSelection();
+
+  const zonaCompetenciaConLabel = useMemo(() => {
+    if (!zonaCompetenciaGeoJSON) return null;
+
+    return {
+      type: "Feature",
+      properties: {
+        label: "Zona de Competencia",
+      },
+      geometry: zonaCompetenciaGeoJSON,
+    };
+  }, [zonaCompetenciaGeoJSON]);
+
+  const lineaTiroConLabel = useMemo(() => {
+    if (!lineaTiroGeoJSON) return null;
+
+    return {
+      type: "Feature",
+      properties: {
+        label: "Linea de tiro",
+      },
+      geometry: lineaTiroGeoJSON,
+    };
+  }, [lineaTiroGeoJSON]);
 
   return (
     <div className="container-fluid py-4">
@@ -102,14 +149,18 @@ export default function CrearTorneoView() {
                 <Basemap center={MAP_CENTER}>
                   <PolygonsLayer
                     id="crear-torneo-zona"
-                    data={zonaCompetenciaGeoJSON}
+                    data={zonaCompetenciaConLabel}
                     fillPaint={ZONA_FILL_PAINT}
                     linePaint={ZONA_LINE_PAINT}
+                    labelPaint={LABEL_PAINT}
+                    labelLayout={ZONA_LABEL_LAYOUT}
                   />
                   <LinesLayer
                     id="crear-torneo-linea"
-                    data={lineaTiroGeoJSON}
+                    data={lineaTiroConLabel}
                     paint={LINEA_PAINT}
+                    labelPaint={LABEL_PAINT}
+                    labelLayout={LINEA_LABEL_LAYOUT}
                   />
                   <PointsLayer
                     id="crear-torneo-puntos"

@@ -12,6 +12,7 @@ const TorneoDetalleView = lazy(() => import("./views/admin/TorneoDetalleView.jsx
 const UsuariosView = lazy(() => import("./views/admin/UsuariosView.jsx"));
 const CategoriasView = lazy(() => import("./views/admin/CategoriasView.jsx"));
 const LogsView = lazy(() => import("./views/admin/LogsView.jsx"));
+const EstadisticasAdminView = lazy(() => import("./views/admin/EstadisticasAdminView.jsx"));
 
 const ArcherDashboardView = lazy(() => import("./views/archer/ArcherDashboardView.jsx"));
 const TorneosView = lazy(() => import("./views/archer/TorneosView.jsx"));
@@ -45,6 +46,7 @@ function App() {
             <Route path="/admin/usuarios" element={lazyRoute(<UsuariosView />)} />
             <Route path="/admin/categorias" element={lazyRoute(<CategoriasView />)} />
             <Route path="/admin/logs" element={lazyRoute(<LogsView />)} />
+            <Route path="/admin/estadisticas" element={lazyRoute(<EstadisticasAdminView />)} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={["ARQUERO"]} />}>

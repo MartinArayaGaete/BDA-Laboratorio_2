@@ -20,6 +20,7 @@ export default function Sidebar() {
         { path: "/admin/usuarios", label: "Usuarios" },
         { path: "/admin/categorias", label: "Categorías" },
         { path: "/admin/logs", label: "Auditoría" },
+        { path: "/admin/estadisticas", label: "Estadísticas" },
       ]
     : [
         { path: "/archer", label: "Mi Panel" },

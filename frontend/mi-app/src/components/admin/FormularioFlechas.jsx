@@ -18,6 +18,17 @@ export default function FormularioFlechas({
   const [zonaAsignada, setZonaAsignada] = useState(false);
 
   useEffect(() => {
+    if (rondaSel && rondas.length > 0) {
+      const ronda = rondas.find((r) => r.numeroRonda === parseInt(rondaSel));
+      if (ronda && ronda.idZonaAmbiental) {
+        setZonaAsignada(true);
+      } else {
+        setZonaAsignada(false);
+      }
+    }
+  }, [rondaSel, rondas]);
+
+  useEffect(() => {
     if (torneo?.idTorneo) {
       torneoService
         .obtenerClimasPorTorneo(torneo.idTorneo)
@@ -37,6 +48,7 @@ export default function FormularioFlechas({
         parseInt(climaSel),
       );
       setZonaAsignada(true);
+      // Actualizar la ronda localmente para reflejar el cambio (opcional, pero buena práctica si se pudiera)
     } catch (err) {
       alert("Error al asignar zona climática");
     }
@@ -132,7 +144,7 @@ export default function FormularioFlechas({
           </div>
         )}
 
-        {rondaSel && (
+        {rondaSel && zonaAsignada && (
           <div className="bg-light p-3 rounded">
             <label className="form-label fw-bold">Puntajes (0-10)</label>
             <div className="d-flex gap-3 mb-3">
@@ -164,6 +176,11 @@ export default function FormularioFlechas({
             >
               {guardandoPuntaje ? "Guardando..." : "Guardar Puntajes"}
             </button>
+          </div>
+        )}
+        {rondaSel && !zonaAsignada && (
+          <div className="alert alert-warning mt-3">
+            Debes asignar una zona climática para registrar puntajes.
           </div>
         )}
       </div>

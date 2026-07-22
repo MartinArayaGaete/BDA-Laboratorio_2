@@ -1,40 +1,24 @@
 // src/views/admin/CrearTorneoView.jsx
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import FormCrearTorneo from "../../components/admin/FormCrearTorneo.jsx";
 import Basemap from "../../components/maps/Basemap.jsx";
 import LinesLayer from "../../components/maps/LinesLayer.jsx";
-import PointSelectorLayer from "../../components/maps/PointSelectorLayer.jsx";
-import PointsLayer from "../../components/maps/PointsLayer.jsx";
 import PolygonsLayer from "../../components/maps/PolygonsLayer.jsx";
-import useTorneoMapSelection, {
-  MAP_SELECTION_TARGETS,
-} from "../../hooks/useTorneoMapSelection.js";
+import TorneoZoneEditorLayer from "../../components/maps/TorneoZoneEditorLayer.jsx";
+import useTorneoMapSelection from "../../hooks/useTorneoMapSelection.js";
+import FitBoundsFromPolygonLayer from "../../components/maps/FitBoundsFromPolygonLayer.jsx";
 
 const MAP_CENTER = [-70.634, -33.448];
 
-const POINTS_PAINT = {
-  "circle-radius": 7,
-  "circle-color": [
-    "match",
-    ["get", "kind"],
-    "linea",
-    "#dc2626",
-    "zona",
-    "#2563eb",
-    "#111827",
-  ],
-  "circle-stroke-color": "#ffffff",
-  "circle-stroke-width": 2,
-};
-
-const ZONA_FILL_PAINT = {
+const ZONA_LABEL_FILL_PAINT = {
   "fill-color": "#2563eb",
-  "fill-opacity": 0.18,
+  "fill-opacity": 0,
 };
 
-const ZONA_LINE_PAINT = {
+const ZONA_LABEL_LINE_PAINT = {
   "line-color": "#1d4ed8",
-  "line-width": 2,
+  "line-opacity": 0,
+  "line-width": 0,
 };
 
 const LINEA_PAINT = {
@@ -65,18 +49,42 @@ const LINEA_LABEL_LAYOUT = {
 };
 
 export default function CrearTorneoView() {
+  const [mapRequirements, setMapRequirements] = useState({
+    minWidthM: 25,
+    minHeightM: 50,
+  });
+  const [resetVersion, setResetVersion] = useState(0);
   const {
     coordsZonaCompetencia,
     coordsLineaTiro,
-    selectedTarget,
-    selectedPoint,
     zonaCompetenciaGeoJSON,
     lineaTiroGeoJSON,
-    puntosGeoJSON,
-    setSelectedTarget,
-    setSelectedPoint,
+    setGeometriasTorneo,
     resetSelection,
   } = useTorneoMapSelection();
+  const mapDimensions = useMemo(() => {
+    const minWidthM = Math.max(Number(mapRequirements.minWidthM) || 0, 0);
+    const minHeightM = Math.max(Number(mapRequirements.minHeightM) || 0, 0);
+
+    return {
+      minWidthM,
+      minHeightM,
+      defaultWidthM: minWidthM > 0 ? minWidthM : 1,
+      defaultHeightM: minHeightM > 0 ? minHeightM : 1,
+    };
+  }, [mapRequirements]);
+
+  const handleGeometryChange = useCallback(
+    ({ zonaCompetencia, lineaTiro }) => {
+      setGeometriasTorneo(zonaCompetencia, lineaTiro);
+    },
+    [setGeometriasTorneo],
+  );
+
+  const handleReset = useCallback(() => {
+    resetSelection();
+    setResetVersion((version) => version + 1);
+  }, [resetSelection]);
 
   const zonaCompetenciaConLabel = useMemo(() => {
     if (!zonaCompetenciaGeoJSON) return null;
@@ -109,6 +117,7 @@ export default function CrearTorneoView() {
           <FormCrearTorneo
             coordsZonaCompetencia={coordsZonaCompetencia}
             coordsLineaTiro={coordsLineaTiro}
+            onMapRequirementsChange={setMapRequirements}
           />
         </div>
 
@@ -119,39 +128,30 @@ export default function CrearTorneoView() {
               <button
                 type="button"
                 className="btn btn-sm btn-outline-light"
-                onClick={resetSelection}
+                onClick={handleReset}
               >
                 Reiniciar
               </button>
             </div>
             <div className="card-body">
-              <div className="d-flex flex-wrap gap-2 mb-3">
-                {MAP_SELECTION_TARGETS.map((target) => (
-                  <button
-                    key={target.id}
-                    type="button"
-                    className={`btn btn-sm ${
-                      selectedTarget === target.id
-                        ? "btn-dark"
-                        : "btn-outline-dark"
-                    }`}
-                    onClick={() => setSelectedTarget(target.id)}
-                  >
-                    {target.label}
-                  </button>
-                ))}
-              </div>
-
               <div
                 className="border overflow-hidden"
                 style={{ height: "520px", borderRadius: "8px" }}
               >
                 <Basemap center={MAP_CENTER}>
+                  <TorneoZoneEditorLayer
+                    minWidthM={mapDimensions.minWidthM}
+                    minHeightM={mapDimensions.minHeightM}
+                    defaultWidthM={mapDimensions.defaultWidthM}
+                    defaultHeightM={mapDimensions.defaultHeightM}
+                    resetVersion={resetVersion}
+                    onGeometryChange={handleGeometryChange}
+                  />
                   <PolygonsLayer
                     id="crear-torneo-zona"
                     data={zonaCompetenciaConLabel}
-                    fillPaint={ZONA_FILL_PAINT}
-                    linePaint={ZONA_LINE_PAINT}
+                    fillPaint={ZONA_LABEL_FILL_PAINT}
+                    linePaint={ZONA_LABEL_LINE_PAINT}
                     labelPaint={LABEL_PAINT}
                     labelLayout={ZONA_LABEL_LAYOUT}
                   />
@@ -161,16 +161,6 @@ export default function CrearTorneoView() {
                     paint={LINEA_PAINT}
                     labelPaint={LABEL_PAINT}
                     labelLayout={LINEA_LABEL_LAYOUT}
-                  />
-                  <PointsLayer
-                    id="crear-torneo-puntos"
-                    data={puntosGeoJSON}
-                    paint={POINTS_PAINT}
-                  />
-                  <PointSelectorLayer
-                    value={selectedPoint}
-                    onChange={setSelectedPoint}
-                    markerColor="#111827"
                   />
                 </Basemap>
               </div>

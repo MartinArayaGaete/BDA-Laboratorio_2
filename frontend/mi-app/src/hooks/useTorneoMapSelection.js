@@ -37,6 +37,10 @@ function formatCoordinate(value) {
   return numberValue === null ? "" : numberValue.toFixed(6);
 }
 
+function formatGeometryCoordinate(point, index) {
+  return formatCoordinate(point?.[index]);
+}
+
 function pointFromFields(lng, lat) {
   const lngValue = toNumber(lng);
   const latValue = toNumber(lat);
@@ -111,6 +115,44 @@ export function coordsLineaToLineString(coordsLinea) {
       [start.lng, start.lat],
       [end.lng, end.lat],
     ],
+  };
+}
+
+function coordsZonaFromPolygon(geometry) {
+  const ring = geometry?.coordinates?.[0];
+
+  if (geometry?.type !== "Polygon" || !Array.isArray(ring) || ring.length < 4) {
+    return null;
+  }
+
+  return {
+    lat1: formatGeometryCoordinate(ring[0], 1),
+    lng1: formatGeometryCoordinate(ring[0], 0),
+    lat2: formatGeometryCoordinate(ring[1], 1),
+    lng2: formatGeometryCoordinate(ring[1], 0),
+    lat3: formatGeometryCoordinate(ring[2], 1),
+    lng3: formatGeometryCoordinate(ring[2], 0),
+    lat4: formatGeometryCoordinate(ring[3], 1),
+    lng4: formatGeometryCoordinate(ring[3], 0),
+  };
+}
+
+function coordsLineaFromLineString(geometry) {
+  const coordinates = geometry?.coordinates;
+
+  if (
+    geometry?.type !== "LineString" ||
+    !Array.isArray(coordinates) ||
+    coordinates.length < 2
+  ) {
+    return null;
+  }
+
+  return {
+    latInicio: formatGeometryCoordinate(coordinates[0], 1),
+    lngInicio: formatGeometryCoordinate(coordinates[0], 0),
+    latFin: formatGeometryCoordinate(coordinates[1], 1),
+    lngFin: formatGeometryCoordinate(coordinates[1], 0),
   };
 }
 
@@ -214,6 +256,19 @@ export default function useTorneoMapSelection() {
     setSelectedTarget("zona1");
   }, []);
 
+  const setGeometriasTorneo = useCallback((zonaCompetencia, lineaTiro) => {
+    const nextCoordsZona = coordsZonaFromPolygon(zonaCompetencia);
+    const nextCoordsLinea = coordsLineaFromLineString(lineaTiro);
+
+    if (nextCoordsZona) {
+      setCoordsZonaCompetencia(nextCoordsZona);
+    }
+
+    if (nextCoordsLinea) {
+      setCoordsLineaTiro(nextCoordsLinea);
+    }
+  }, []);
+
   const zonaCompetenciaGeoJSON = useMemo(() => {
     return coordsZonaToPolygon(coordsZonaCompetencia);
   }, [coordsZonaCompetencia]);
@@ -239,6 +294,7 @@ export default function useTorneoMapSelection() {
     puntosGeoJSON,
     setSelectedTarget,
     setSelectedPoint,
+    setGeometriasTorneo,
     resetSelection,
   };
 }

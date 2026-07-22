@@ -22,6 +22,8 @@ const LINEA_FIELDS = [
   { label: "Fin", lat: "latFin", lng: "lngFin" },
 ];
 
+const DEFAULT_ANCHO_MINIMO_MAPA = 25;
+
 function ReadonlyCoordinateGroup({ label, latValue, lngValue }) {
   return (
     <div className="col-md-3">
@@ -47,6 +49,7 @@ function ReadonlyCoordinateGroup({ label, latValue, lngValue }) {
 export default function FormCrearTorneo({
   coordsZonaCompetencia = DEFAULT_COORDS_ZONA_COMPETENCIA,
   coordsLineaTiro = DEFAULT_COORDS_LINEA_TIRO,
+  onMapRequirementsChange,
 }) {
   const navigate = useNavigate();
   const [categorias, setCategorias] = useState([]);
@@ -73,6 +76,23 @@ export default function FormCrearTorneo({
   }, [coordsLineaTiro]);
 
   const coordenadasCompletas = Boolean(zonaGeoJSON && lineaGeoJSON);
+  const categoriaSeleccionada = useMemo(() => {
+    return categorias.find(
+      (categoria) => String(categoria.idCategoria) === String(formData.idCategoria),
+    );
+  }, [categorias, formData.idCategoria]);
+  const distanciaTiroSeleccionada = Number(categoriaSeleccionada?.distanciaTiro);
+  const distanciaTiroMapa = Number.isFinite(distanciaTiroSeleccionada)
+    ? distanciaTiroSeleccionada
+    : null;
+  const plazasMaximas = Number(formData.nroPlazaMax);
+  const plazasMaximasValidas =
+    formData.nroPlazaMax !== "" &&
+    Number.isInteger(plazasMaximas) &&
+    plazasMaximas >= 1 &&
+    plazasMaximas <= 100;
+  const altoMinimo = plazasMaximas > 0 ? plazasMaximas * 5 : 0;
+  const anchoMinimo = distanciaTiroMapa ?? DEFAULT_ANCHO_MINIMO_MAPA;
 
   useEffect(() => {
     let ignore = false;
@@ -100,6 +120,24 @@ export default function FormCrearTorneo({
       ignore = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!onMapRequirementsChange) return;
+
+    onMapRequirementsChange({
+      nroPlazaMax: plazasMaximasValidas ? plazasMaximas : null,
+      distanciaTiroM: distanciaTiroMapa,
+      minHeightM: plazasMaximasValidas ? altoMinimo : 0,
+      minWidthM: anchoMinimo,
+    });
+  }, [
+    altoMinimo,
+    anchoMinimo,
+    distanciaTiroMapa,
+    onMapRequirementsChange,
+    plazasMaximas,
+    plazasMaximasValidas,
+  ]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -140,6 +178,11 @@ export default function FormCrearTorneo({
       return;
     }
 
+    if (!plazasMaximasValidas) {
+      setError("El numero de plazas maximo debe ser un entero entre 1 y 100.");
+      return;
+    }
+
     if (!zonaGeoJSON || !lineaGeoJSON) {
       setError("Debe definir la zona de competencia y la linea de tiro.");
       return;
@@ -153,7 +196,7 @@ export default function FormCrearTorneo({
         idCategoria: parseInt(formData.idCategoria),
         fechaInicio: formData.fechaInicio,
         fechaTermino: formData.fechaTermino,
-        nroPlazaMax: formData.nroPlazaMax,
+        nroPlazaMax: plazasMaximas,
         geomZonaCompetencia: JSON.stringify(zonaGeoJSON),
         lineaTiro: JSON.stringify(lineaGeoJSON),
       });
@@ -291,11 +334,12 @@ export default function FormCrearTorneo({
                 onChange={handleChange}
                 min="1"
                 max="100"
+                step="1"
                 required
                 disabled={guardando || categorias.length === 0}
               />
               <small className="text-muted">
-                Ancho necesario: {formData.nroPlazaMax * 5}m
+                Alto minimo: {altoMinimo}m · Ancho minimo: {anchoMinimo}m
               </small>
             </div>
           </div>

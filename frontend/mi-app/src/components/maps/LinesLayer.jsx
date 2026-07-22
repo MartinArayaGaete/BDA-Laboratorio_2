@@ -13,10 +13,25 @@ const DEFAULT_LAYOUT = {
   "line-join": "round",
 };
 
+const DEFAULT_LABEL_PAINT = {
+  "text-color": "#111827",
+  "text-halo-color": "#ffffff",
+  "text-halo-width": 1.5,
+};
+
+const DEFAULT_LABEL_LAYOUT = {
+  "text-field": ["coalesce", ["get", "label"], ""],
+  "text-size": 14,
+  "text-anchor": "center",
+  "text-allow-overlap": true,
+};
+
 export default function LinesLayer({
   data,
   id,
   beforeId,
+  labelPaint,
+  labelLayout,
   paint,
   layout,
 }) {
@@ -25,7 +40,11 @@ export default function LinesLayer({
   const layerIdPrefix = id ?? `lines-${reactId}`;
   const sourceId = `${layerIdPrefix}-source`;
   const layerId = `${layerIdPrefix}-line`;
+  const labelLayerId = `${layerIdPrefix}-label`;
   const layerData = data;
+
+  const lineLabelPaint = labelPaint ?? DEFAULT_LABEL_PAINT;
+  const lineLabelLayout = labelLayout ?? DEFAULT_LABEL_LAYOUT;
 
   const geojson = useMemo(() => {
     return toFeatureCollection(layerData, ["LineString", "MultiLineString"]);
@@ -37,6 +56,7 @@ export default function LinesLayer({
   useEffect(() => {
     if (!map || !ready || !geojson) return;
 
+    removeLayer(map, labelLayerId);
     removeLayer(map, layerId);
     removeSource(map, sourceId);
 
@@ -57,8 +77,21 @@ export default function LinesLayer({
       beforeId,
     );
 
+    addLayer(
+      map,
+      {
+        id: labelLayerId,
+        type: "symbol",
+        source: sourceId,
+        paint: lineLabelPaint,
+        layout: lineLabelLayout,
+      },
+      beforeId,
+    );
+
     return () => {
       removeLayer(map, layerId);
+      removeLayer(map, labelLayerId);
       removeSource(map, sourceId);
     };
   }, [
@@ -70,6 +103,9 @@ export default function LinesLayer({
     map,
     ready,
     sourceId,
+    labelLayerId,
+    lineLabelPaint,
+    lineLabelLayout,
   ]);
 
   return null;

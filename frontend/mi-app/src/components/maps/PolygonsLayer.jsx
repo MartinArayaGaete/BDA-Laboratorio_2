@@ -15,12 +15,27 @@ const DEFAULT_LINE_PAINT = {
 
 const DEFAULT_LAYOUT = {};
 
+const DEFAULT_LABEL_PAINT = {
+  "text-color": "#111827",
+  "text-halo-color": "#ffffff",
+  "text-halo-width": 1.5,
+};
+
+const DEFAULT_LABEL_LAYOUT = {
+  "text-field": ["coalesce", ["get", "label"], ""],
+  "text-size": 14,
+  "text-anchor": "center",
+  "text-allow-overlap": true,
+};
+
 export default function PolygonsLayer({
   data,
   id,
   beforeId,
   fillPaint,
   linePaint,
+  labelPaint,
+  labelLayout,
   fillLayout,
   lineLayout,
 }) {
@@ -30,6 +45,7 @@ export default function PolygonsLayer({
   const sourceId = `${layerIdPrefix}-source`;
   const fillLayerId = `${layerIdPrefix}-fill`;
   const lineLayerId = `${layerIdPrefix}-line`;
+  const labelLayerId = `${layerIdPrefix}-label`;
   const layerData = data;
 
   const geojson = useMemo(() => {
@@ -41,9 +57,13 @@ export default function PolygonsLayer({
   const polygonFillLayout = fillLayout ?? DEFAULT_LAYOUT;
   const polygonLineLayout = lineLayout ?? DEFAULT_LAYOUT;
 
+  const polygonLabelPaint = labelPaint ?? DEFAULT_LABEL_PAINT;
+  const polygonLabelLayout = labelLayout ?? DEFAULT_LABEL_LAYOUT;
+
   useEffect(() => {
     if (!map || !ready || !geojson) return;
 
+    removeLayer(map, labelLayerId);
     removeLayer(map, lineLayerId);
     removeLayer(map, fillLayerId);
     removeSource(map, sourceId);
@@ -77,7 +97,20 @@ export default function PolygonsLayer({
       beforeId,
     );
 
+    addLayer(
+      map,
+      {
+        id: labelLayerId,
+        type: "symbol",
+        source: sourceId,
+        paint: polygonLabelPaint,
+        layout: polygonLabelLayout,
+      },
+      beforeId,
+    );
+
     return () => {
+      removeLayer(map, labelLayerId);
       removeLayer(map, lineLayerId);
       removeLayer(map, fillLayerId);
       removeSource(map, sourceId);
@@ -94,6 +127,9 @@ export default function PolygonsLayer({
     polygonLinePaint,
     ready,
     sourceId,
+    labelLayerId,
+    polygonLabelPaint,
+    polygonLabelLayout,
   ]);
 
   return null;

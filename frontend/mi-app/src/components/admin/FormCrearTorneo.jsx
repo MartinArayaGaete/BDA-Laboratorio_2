@@ -102,11 +102,16 @@ export default function FormCrearTorneo({
   }, []);
 
   const handleChange = (e) => {
-    const value =
-      e.target.name === "nroPlazaMax"
-        ? parseInt(e.target.value) || 1
-        : e.target.value;
-    setFormData({ ...formData, [e.target.name]: value });
+    const { name, value } = e.target;
+
+    if (name === "nroPlazaMax" && value !== "" && !/^[1-9]\d*$/.test(value)) {
+      return;
+    }
+
+    setFormData({
+      ...formData,
+      [name]: name === "nroPlazaMax" && value !== "" ? Number(value) : value,
+    });
     if (error) setError("");
   };
 

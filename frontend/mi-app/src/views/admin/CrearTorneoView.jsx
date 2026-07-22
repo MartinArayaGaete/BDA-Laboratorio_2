@@ -6,7 +6,7 @@ import LinesLayer from "../../components/maps/LinesLayer.jsx";
 import PolygonsLayer from "../../components/maps/PolygonsLayer.jsx";
 import TorneoZoneEditorLayer from "../../components/maps/TorneoZoneEditorLayer.jsx";
 import useTorneoMapSelection from "../../hooks/useTorneoMapSelection.js";
-import FitBoundsFromPolygonLayer from "../../components/maps/FitBoundsFromPolygonLayer.jsx";
+import { getRectangleMeasurementLines } from "../../utils/torneoGeometry.js";
 
 const MAP_CENTER = [-70.634, -33.448];
 
@@ -26,8 +26,20 @@ const LINEA_PAINT = {
   "line-width": 3,
 };
 
+const MEDIDAS_PAINT = {
+  "line-color": "#f59e0b",
+  "line-width": 2,
+  "line-dasharray": [2, 2],
+};
+
 const LABEL_PAINT = {
   "text-color": "#111827",
+  "text-halo-color": "#ffffff",
+  "text-halo-width": 2,
+};
+
+const MEDIDAS_LABEL_PAINT = {
+  "text-color": "#7c2d12",
   "text-halo-color": "#ffffff",
   "text-halo-width": 2,
 };
@@ -47,6 +59,20 @@ const LINEA_LABEL_LAYOUT = {
   "text-offset": [0, -1],
   "text-allow-overlap": true,
 };
+
+const MEDIDAS_LABEL_LAYOUT = {
+  "text-field": ["coalesce", ["get", "label"], ""],
+  "text-size": 13,
+  "text-anchor": "center",
+  "text-offset": [0, 0.8],
+  "text-allow-overlap": true,
+};
+
+function formatMeters(value) {
+  if (!Number.isFinite(value)) return "0 m";
+
+  return value < 10 ? `${value.toFixed(1)} m` : `${Math.round(value)} m`;
+}
 
 export default function CrearTorneoView() {
   const [mapRequirements, setMapRequirements] = useState({
@@ -110,6 +136,31 @@ export default function CrearTorneoView() {
     };
   }, [lineaTiroGeoJSON]);
 
+  const medidasZonaGeoJSON = useMemo(() => {
+    const measurements = getRectangleMeasurementLines(zonaCompetenciaGeoJSON);
+    if (!measurements) return null;
+
+    return {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: {
+            label: `Ancho: ${formatMeters(measurements.widthM)}`,
+          },
+          geometry: measurements.widthLine,
+        },
+        {
+          type: "Feature",
+          properties: {
+            label: `Alto: ${formatMeters(measurements.heightM)}`,
+          },
+          geometry: measurements.heightLine,
+        },
+      ],
+    };
+  }, [zonaCompetenciaGeoJSON]);
+
   return (
     <div className="container-fluid py-4">
       <div className="row g-4">
@@ -134,6 +185,11 @@ export default function CrearTorneoView() {
               </button>
             </div>
             <div className="card-body">
+              <div className="alert alert-info py-2 px-3 mb-3 small" role="note">
+                Para rotar la zona, seleccionala y arrastrala manteniendo
+                Control + R. Tambien puedes moverla arrastrandola y agrandarla
+                desde sus esquinas.
+              </div>
               <div
                 className="border overflow-hidden"
                 style={{ height: "520px", borderRadius: "8px" }}
@@ -161,6 +217,13 @@ export default function CrearTorneoView() {
                     paint={LINEA_PAINT}
                     labelPaint={LABEL_PAINT}
                     labelLayout={LINEA_LABEL_LAYOUT}
+                  />
+                  <LinesLayer
+                    id="crear-torneo-medidas"
+                    data={medidasZonaGeoJSON}
+                    paint={MEDIDAS_PAINT}
+                    labelPaint={MEDIDAS_LABEL_PAINT}
+                    labelLayout={MEDIDAS_LABEL_LAYOUT}
                   />
                 </Basemap>
               </div>

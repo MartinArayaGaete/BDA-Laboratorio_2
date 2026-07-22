@@ -146,6 +146,26 @@ export function getRectangleCenter(geometry) {
   return [lngSum / corners.length, latSum / corners.length];
 }
 
+export function getRectangleMeasurementLines(geometry) {
+  const corners = fourCornersFromGeometry(geometry);
+  const dimensions = getRectangleDimensions(geometry);
+
+  if (!corners || !dimensions) return null;
+
+  return {
+    widthM: dimensions.widthM,
+    heightM: dimensions.heightM,
+    widthLine: {
+      type: "LineString",
+      coordinates: [corners[3], corners[2]],
+    },
+    heightLine: {
+      type: "LineString",
+      coordinates: [corners[1], corners[2]],
+    },
+  };
+}
+
 export function clampRectangleGeometry(geometry, minWidthM, minHeightM) {
   const corners = fourCornersFromGeometry(geometry);
   const dimensions = getRectangleDimensions(geometry);

@@ -54,14 +54,15 @@ public class GeospatialService {
         ));
     }
 
+    // le agregue que tambien obtenga el id
     public List<Map<String, Object>> obtenerCategoriasPorPunto(Double lat, Double lng) {
         String sql = """
-            SELECT DISTINCT sa.id_zona_ambiental, ca.id_categoria_ambiental, ca.categoria_ambiental
-            FROM categoria_ambiental ca
-            JOIN sectores_ambientales sa ON ca.id_categoria_ambiental = sa.id_categoria_ambiental
-            WHERE ST_Intersects(sa.territorio, ST_SetSRID(ST_MakePoint(?, ?), 4326))
-            ORDER BY ca.categoria_ambiental
-            """;
+        SELECT DISTINCT sa.id_zona_ambiental, ca.id_categoria_ambiental, ca.categoria_ambiental
+        FROM categoria_ambiental ca
+        JOIN sectores_ambientales sa ON ca.id_categoria_ambiental = sa.id_categoria_ambiental
+        WHERE ST_Intersects(sa.territorio, ST_SetSRID(ST_MakePoint(?, ?), 4326))
+        ORDER BY ca.categoria_ambiental
+        """;
         return jdbcTemplate.queryForList(sql, lng, lat);
     }
 }

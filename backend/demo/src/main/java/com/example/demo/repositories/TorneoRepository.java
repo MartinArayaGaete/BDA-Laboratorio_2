@@ -181,15 +181,15 @@ public class TorneoRepository {
         return jdbcTemplate.queryForList(sql, idUsuario, size, offset);
     }
 
-    public List<String> obtenerClimasPorTorneo(Long idTorneo) {
+    public List<Map<String, Object>> obtenerClimasPorTorneo(Long idTorneo) {
         String sql = """
-            SELECT DISTINCT ca.categoria_ambiental
+            SELECT DISTINCT sa.id_zona_ambiental, ca.categoria_ambiental
             FROM torneo t
             JOIN sectores_ambientales sa ON ST_Intersects(t.espacio_torneo, sa.territorio)
             JOIN categoria_ambiental ca ON sa.id_categoria_ambiental = ca.id_categoria_ambiental
             WHERE t.id_torneo = ?
         """;
-        return jdbcTemplate.query(sql, (rs, rowNum) -> rs.getString("categoria_ambiental"), idTorneo);
+        return jdbcTemplate.queryForList(sql, idTorneo);
     }
 
 
@@ -246,4 +246,3 @@ public class TorneoRepository {
     }
 
 }
-

@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ArqueroPosicionDTO {
+    private Long idParticipacion;
     private Long idUsuario;
     private String nombre;
     private String rut;

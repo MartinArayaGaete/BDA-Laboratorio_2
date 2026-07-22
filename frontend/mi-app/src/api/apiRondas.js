@@ -23,7 +23,6 @@ const rondaService = {
     return response.data;
   },
 
-  // ✅ CORREGIDO: PUT en vez de POST
   asignarZonaAmbiental: async (idRonda, idZonaAmbiental) => {
     const response = await api.put(`/rondas/${idRonda}/zona-ambiental`, {
       idZonaAmbiental,

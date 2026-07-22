@@ -1,4 +1,3 @@
-// src/components/admin/FormCrearTorneo.jsx
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import torneoService from "../../api/apiTorneos.js";
@@ -91,8 +90,11 @@ export default function FormCrearTorneo({
     Number.isInteger(plazasMaximas) &&
     plazasMaximas >= 1 &&
     plazasMaximas <= 100;
-  const altoMinimo = plazasMaximas > 0 ? plazasMaximas * 5 : 0;
-  const anchoMinimo = distanciaTiroMapa ?? DEFAULT_ANCHO_MINIMO_MAPA;
+  // El alto minimo se calcula por 6, para dar margen de posicionamiento 
+  // para la colocación de las dianas, de forma que no es 100% restrictiva
+  // La regla de los 5 metros es para que la linea de tiro no quede pegada a la zona de competencia, y se pueda colocar un espacio de seguridad
+  const altoMinimo = plazasMaximas > 0 ? plazasMaximas * 6 : 0;
+  const anchoMinimo = (distanciaTiroMapa ?? DEFAULT_ANCHO_MINIMO_MAPA)*1.2;
 
   useEffect(() => {
     let ignore = false;
@@ -128,7 +130,7 @@ export default function FormCrearTorneo({
       nroPlazaMax: plazasMaximasValidas ? plazasMaximas : null,
       distanciaTiroM: distanciaTiroMapa,
       minHeightM: plazasMaximasValidas ? altoMinimo : 0,
-      minWidthM: anchoMinimo,
+      minWidthM: anchoMinimo, // Se multiplica por 1.2 para dar un margen de seguridad y no quede pegado a los bordes del mapa
     });
   }, [
     altoMinimo,

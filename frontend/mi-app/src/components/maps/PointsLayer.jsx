@@ -12,6 +12,11 @@ const DEFAULT_PAINT = {
 
 const DEFAULT_LAYOUT = {};
 
+const EMPTY_FEATURE_COLLECTION = {
+  type: "FeatureCollection",
+  features: [],
+};
+
 export default function PointsLayer({
   data,
   id,
@@ -34,14 +39,14 @@ export default function PointsLayer({
   const layerLayout = layout ?? DEFAULT_LAYOUT;
 
   useEffect(() => {
-    if (!map || !ready || !geojson) return;
+    if (!map || !ready) return;
 
     removeLayer(map, layerId);
     removeSource(map, sourceId);
 
     map.addSource(sourceId, {
       type: "geojson",
-      data: geojson,
+      data: EMPTY_FEATURE_COLLECTION,
     });
 
     addLayer(
@@ -62,7 +67,6 @@ export default function PointsLayer({
     };
   }, [
     beforeId,
-    geojson,
     layerId,
     layerLayout,
     layerPaint,
@@ -70,6 +74,13 @@ export default function PointsLayer({
     ready,
     sourceId,
   ]);
+
+  useEffect(() => {
+    if (!map || !ready) return;
+
+    const source = map.getSource(sourceId);
+    source?.setData(geojson ?? EMPTY_FEATURE_COLLECTION);
+  }, [geojson, map, ready, sourceId]);
 
   return null;
 }

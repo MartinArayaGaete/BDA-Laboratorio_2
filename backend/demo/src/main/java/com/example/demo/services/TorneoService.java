@@ -167,7 +167,7 @@ public class TorneoService {
         }
     }
 
-    public List<String> obtenerClimasPorTorneo(Long idTorneo) {
+    public List<Map<String, Object>> obtenerClimasPorTorneo(Long idTorneo) {
         return torneoRepository.obtenerClimasPorTorneo(idTorneo);
     }
 

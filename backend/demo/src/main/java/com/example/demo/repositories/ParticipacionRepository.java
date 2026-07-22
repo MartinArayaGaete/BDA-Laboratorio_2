@@ -215,6 +215,7 @@ public class ParticipacionRepository {
     public List<Map<String, Object>> obtenerArquerosConPosiciones(Long idTorneo) {
         String sql = """
     SELECT 
+        p.id_participacion,
         u.id_usuario, 
         u.nombre, 
         u.rut

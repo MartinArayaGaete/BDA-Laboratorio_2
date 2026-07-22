@@ -26,6 +26,11 @@ const DEFAULT_LABEL_LAYOUT = {
   "text-allow-overlap": true,
 };
 
+const EMPTY_FEATURE_COLLECTION = {
+  type: "FeatureCollection",
+  features: [],
+};
+
 export default function LinesLayer({
   data,
   id,
@@ -54,7 +59,7 @@ export default function LinesLayer({
   const layerLayout = layout ?? DEFAULT_LAYOUT;
 
   useEffect(() => {
-    if (!map || !ready || !geojson) return;
+    if (!map || !ready) return;
 
     removeLayer(map, labelLayerId);
     removeLayer(map, layerId);
@@ -62,7 +67,7 @@ export default function LinesLayer({
 
     map.addSource(sourceId, {
       type: "geojson",
-      data: geojson,
+      data: EMPTY_FEATURE_COLLECTION,
     });
 
     addLayer(
@@ -96,7 +101,6 @@ export default function LinesLayer({
     };
   }, [
     beforeId,
-    geojson,
     layerId,
     layerLayout,
     layerPaint,
@@ -107,6 +111,13 @@ export default function LinesLayer({
     lineLabelPaint,
     lineLabelLayout,
   ]);
+
+  useEffect(() => {
+    if (!map || !ready) return;
+
+    const source = map.getSource(sourceId);
+    source?.setData(geojson ?? EMPTY_FEATURE_COLLECTION);
+  }, [geojson, map, ready, sourceId]);
 
   return null;
 }

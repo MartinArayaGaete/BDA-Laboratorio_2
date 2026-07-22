@@ -142,9 +142,17 @@ public class TorneoController {
     }
 
     @PostMapping("/registrar-puntaje")
-    public ResponseEntity<String> registrarPuntajeRonda(@RequestBody PuntajeRondaDTO request) {
-        flechaService.registrarRondaCompletaDTO(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Puntaje registrado");
+    public ResponseEntity<?> registrarPuntajeRonda(@RequestBody PuntajeRondaDTO request) {
+        try {
+            flechaService.registrarRondaCompletaDTO(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body("Puntaje registrado");
+        } catch (ResponseStatusException exception) {
+            String message = exception.getReason() == null
+                    ? "No se pudo registrar el puntaje."
+                    : exception.getReason();
+            return ResponseEntity.status(exception.getStatusCode())
+                    .body(Map.of("message", message));
+        }
     }
 
     @PostMapping("/{idTorneo}/iniciar")
@@ -181,8 +189,8 @@ public class TorneoController {
     }
 
     @GetMapping("/{id}/climas")
-    public ResponseEntity<List<String>> obtenerClimasDeTorneo(@PathVariable Long id) {
-        List<String> climas = torneoService.obtenerClimasPorTorneo(id);
+    public ResponseEntity<List<Map<String, Object>>> obtenerClimasDeTorneo(@PathVariable Long id) {
+        List<Map<String, Object>> climas = torneoService.obtenerClimasPorTorneo(id);
         return ResponseEntity.ok(climas);
     }
 

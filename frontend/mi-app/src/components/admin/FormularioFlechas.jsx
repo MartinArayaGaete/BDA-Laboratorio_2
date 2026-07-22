@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import torneoService from "../../api/apiTorneos.js";
 import rondaService from "../../api/apiRondas.js";
+
+const CLIMA_NORMAL_VALUE = "__normal__";
 
 export default function FormularioFlechas({
   torneo,
@@ -10,30 +12,70 @@ export default function FormularioFlechas({
   setRondaSel,
   flechas,
   setFlechas,
+  ubicacionesListas,
+  registroRondaExistente,
   guardandoPuntaje,
   onGuardarPuntaje,
 }) {
   const [climas, setClimas] = useState([]);
   const [climaSel, setClimaSel] = useState("");
   const [zonaAsignada, setZonaAsignada] = useState(false);
+  const flechasCompletas =
+    flechas.length === 6 &&
+    flechas.every((flecha) => {
+      const puntaje = Number(flecha);
+      return (
+        flecha !== "" &&
+        Number.isInteger(puntaje) &&
+        puntaje >= 0 &&
+        puntaje <= 10
+      );
+    });
 
   useEffect(() => {
-    if (rondaSel && rondas.length > 0) {
-      const ronda = rondas.find((r) => r.numeroRonda === parseInt(rondaSel));
-      if (ronda && ronda.idZonaAmbiental) {
-        setZonaAsignada(true);
-      } else {
-        setZonaAsignada(false);
-      }
+    if (!rondaSel) {
+      setClimaSel("");
+      setZonaAsignada(false);
+      return;
     }
-  }, [rondaSel, rondas]);
+
+    const ronda = rondas.find((r) => r.numeroRonda === Number(rondaSel));
+    if (!ronda) return;
+
+    if (ronda.idZonaAmbiental !== null && ronda.idZonaAmbiental !== undefined) {
+      setClimaSel(String(ronda.idZonaAmbiental));
+      setZonaAsignada(true);
+      return;
+    }
+
+    if (registroRondaExistente) {
+      setClimaSel(CLIMA_NORMAL_VALUE);
+      setZonaAsignada(true);
+      return;
+    }
+
+    setClimaSel("");
+    setZonaAsignada(false);
+  }, [registroRondaExistente, rondaSel, rondas]);
 
   useEffect(() => {
     if (torneo?.idTorneo) {
       torneoService
         .obtenerClimasPorTorneo(torneo.idTorneo)
-        .then(setClimas)
-        .catch(() => setClimas([]));
+        .then((climasTorneo) => {
+          const sectores = Array.isArray(climasTorneo)
+            ? climasTorneo
+                .map((clima) => ({
+                  id: clima?.id_zona_ambiental ?? clima?.idZonaAmbiental,
+                  nombre:
+                    clima?.categoria_ambiental ?? clima?.categoriaAmbiental,
+                }))
+                .filter((clima) => clima.id != null && clima.nombre)
+            : [];
+
+          setClimas([{ id: null, nombre: "Normal" }, ...sectores]);
+        })
+        .catch(() => setClimas([{ id: null, nombre: "Normal" }]));
     }
   }, [torneo]);
 
@@ -43,13 +85,15 @@ export default function FormularioFlechas({
     if (!ronda) return;
 
     try {
+      const idZonaAmbiental =
+        climaSel === CLIMA_NORMAL_VALUE ? null : parseInt(climaSel, 10);
+
       await rondaService.asignarZonaAmbiental(
         ronda.idRonda,
-        parseInt(climaSel),
+        idZonaAmbiental,
       );
       setZonaAsignada(true);
-      // Actualizar la ronda localmente para reflejar el cambio (opcional, pero buena práctica si se pudiera)
-    } catch (err) {
+    } catch {
       alert("Error al asignar zona climática");
     }
   };
@@ -116,7 +160,7 @@ export default function FormularioFlechas({
           </select>
         </div>
 
-        {rondaSel && climas.length > 0 && (
+        {rondaSel && (
           <div className="bg-light p-3 rounded mb-3">
             <label className="form-label fw-bold">Condición Climática</label>
             <div className="d-flex gap-2">
@@ -127,9 +171,12 @@ export default function FormularioFlechas({
                 disabled={zonaAsignada}
               >
                 <option value="">-- Seleccionar clima --</option>
-                {climas.map((c, idx) => (
-                  <option key={idx} value={idx + 1}>
-                    {c}
+                {climas.map((c) => (
+                  <option
+                    key={c.id ?? "normal"}
+                    value={c.id === null ? CLIMA_NORMAL_VALUE : c.id}
+                  >
+                    {c.nombre}
                   </option>
                 ))}
               </select>
@@ -146,6 +193,11 @@ export default function FormularioFlechas({
 
         {rondaSel && zonaAsignada && (
           <div className="bg-light p-3 rounded">
+            {!ubicacionesListas && (
+              <div className="alert alert-warning py-2">
+                Debes ubicar al arquero y la diana en el mapa antes de registrar.
+              </div>
+            )}
             <label className="form-label fw-bold">Puntajes (0-10)</label>
             <div className="d-flex gap-3 mb-3">
               {flechas.map((val, idx) => (
@@ -171,7 +223,9 @@ export default function FormularioFlechas({
             <button
               type="submit"
               className="btn btn-dark w-100"
-              disabled={guardandoPuntaje}
+              disabled={
+                guardandoPuntaje || !ubicacionesListas || !flechasCompletas
+              }
               onClick={onGuardarPuntaje}
             >
               {guardandoPuntaje ? "Guardando..." : "Guardar Puntajes"}

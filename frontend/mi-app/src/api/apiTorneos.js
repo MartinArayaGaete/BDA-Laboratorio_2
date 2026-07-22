@@ -11,7 +11,6 @@ const torneoService = {
     return response.data;
   },
 
-  // ✅ CORREGIDO: Agregar nroPlazaMax
   crearTorneo: async (datosTorneo) => {
     const response = await api.post("/torneos", datosTorneo);
     return response.data;
@@ -29,7 +28,6 @@ const torneoService = {
     return response.data;
   },
 
-  // ✅ NUEVO: Reemplaza a registrarPuntajes (que está desactualizado)
   registrarPuntaje: async (datosPuntaje) => {
     const response = await api.post("/torneos/registrar-puntaje", datosPuntaje);
     return response.data;
@@ -50,13 +48,11 @@ const torneoService = {
     return response.data;
   },
 
-  // ✅ NUEVO
   obtenerClimasPorTorneo: async (idTorneo) => {
     const response = await api.get(`/torneos/${idTorneo}/climas`);
     return response.data;
   },
 
-  // ✅ NUEVO
   obtenerPosicionesRonda: async (idTorneo, numeroRonda) => {
     const response = await api.get(
       `/torneos/${idTorneo}/rondas/${numeroRonda}/posiciones`,
@@ -64,7 +60,6 @@ const torneoService = {
     return response.data;
   },
 
-  // ✅ NUEVO
   obtenerPosicionArqueroEnRonda: async (idTorneo, numeroRonda, idUsuario) => {
     const response = await api.get(
       `/torneos/${idTorneo}/rondas/${numeroRonda}/arqueros/${idUsuario}/posicion`,

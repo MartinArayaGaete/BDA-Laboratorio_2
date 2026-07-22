@@ -149,6 +149,7 @@ public class ParticipacionService {
         List<ArqueroPosicionDTO> arqueros = new ArrayList<>();
         for (Map<String, Object> row : arquerosData) {
             ArqueroPosicionDTO dto = new ArqueroPosicionDTO();
+            dto.setIdParticipacion(((Number) row.get("id_participacion")).longValue());
             dto.setIdUsuario(((Number) row.get("id_usuario")).longValue());
             dto.setNombre((String) row.get("nombre"));
             dto.setRut((String) row.get("rut"));

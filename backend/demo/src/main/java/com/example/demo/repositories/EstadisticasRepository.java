@@ -29,7 +29,7 @@ public class EstadisticasRepository {
     public List<EstadisticaAmbientalDTO> obtenerCorrelacionClimatica() {
         String sql = """
             SELECT 
-                COALESCE(ca.categoria_ambiental, 'Sin datos ambientales') AS condicion_climatica,
+                COALESCE(ca.categoria_ambiental, 'Normal') AS condicion_climatica,
                 COUNT(f.id_flecha) AS total_flechas,
                 ROUND(AVG(f.puntaje)::numeric, 2) AS promedio_puntaje,
                 COALESCE(ROUND(STDDEV_SAMP(f.puntaje)::numeric, 2), 0) AS desviacion_precision

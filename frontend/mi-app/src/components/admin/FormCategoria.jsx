@@ -18,22 +18,13 @@ export default function FormCategoria({ onCategoriaCreada }) {
       return;
     }
 
-    const distanciaNumerica = distanciaTiro.trim() === "" ? null : Number(distanciaTiro);
-
-    if (distanciaTiro.trim() !== "" && (!Number.isInteger(distanciaNumerica) || distanciaNumerica < 0)) {
-      setError("La distancia de tiro debe ser un número entero mayor o igual a 0");
-      return;
-    }
-
     setGuardando(true);
     try {
       await categoriaService.crearCategoria({
         nombreCategoria: nombreCategoria.trim(),
-        distanciaTiro: distanciaNumerica,
+        distanciaTiro: distanciaTiro ? parseInt(distanciaTiro) : null,
       });
-
-      const mensajeDistancia = distanciaNumerica === null ? "" : ` con distancia de tiro de ${distanciaNumerica} m`;
-      setSuccess(`Categoría "${nombreCategoria.trim()}" creada exitosamente${mensajeDistancia}`);
+      setSuccess(`Categoría "${nombreCategoria.trim()}" creada exitosamente`);
       setNombreCategoria("");
       setDistanciaTiro("");
       if (onCategoriaCreada) onCategoriaCreada();
@@ -53,33 +44,30 @@ export default function FormCategoria({ onCategoriaCreada }) {
       <div className="card-body">
         {error && <div className="alert alert-danger">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
-
         <form onSubmit={handleSubmit} className="row g-2 align-items-end">
-          <div className="col-md-6">
+          <div className="col-md-5">
             <label className="form-label">Nombre</label>
             <input
               type="text"
               className="form-control"
-              placeholder="Ej: Recurvo, Compuesto, Tradicional"
+              placeholder="Ej: Recurvo"
               value={nombreCategoria}
               onChange={(e) => setNombreCategoria(e.target.value)}
               disabled={guardando}
             />
           </div>
           <div className="col-md-3">
-            <label className="form-label">Distancia de tiro (m)</label>
+            <label className="form-label">Distancia (m)</label>
             <input
               type="number"
               className="form-control"
-              min="0"
-              step="1"
-              placeholder="Ej: 70"
+              placeholder="Ej: 18"
               value={distanciaTiro}
               onChange={(e) => setDistanciaTiro(e.target.value)}
               disabled={guardando}
             />
           </div>
-          <div className="col-md-3">
+          <div className="col-md-4">
             <button
               type="submit"
               className="btn btn-dark w-100"

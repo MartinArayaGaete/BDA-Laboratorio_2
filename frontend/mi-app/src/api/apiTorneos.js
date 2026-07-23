@@ -71,6 +71,11 @@ const torneoService = {
     const response = await api.delete(`/torneos/${idTorneo}`);
     return response.data;
   },
+
+  actualizarTorneo: async (idTorneo, datos) => {
+    const response = await api.put(`/torneos/${idTorneo}`, datos);
+    return response.data;
+  },
 };
 
 export default torneoService;

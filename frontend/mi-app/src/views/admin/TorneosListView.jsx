@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import torneoService from "../../api/apiTorneos.js";
 import TablaTorneos from "../../components/admin/TablaTorneos.jsx";
@@ -11,10 +11,12 @@ export default function TorneosListView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const cargarTorneos = useCallback(() => {
+    setLoading(true);
+    setError("");
     torneoService
       .obtenerTodos()
-      .then(setTorneos)
+      .then((data) => setTorneos(data))
       .catch((err) => {
         setError("Error al cargar torneos");
         console.error(err);
@@ -22,16 +24,18 @@ export default function TorneosListView() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    cargarTorneos();
+  }, [cargarTorneos]);
+
   if (loading) return <LoadingSpinner message="Cargando torneos..." />;
 
   return (
     <div>
-      <div
-        className="d-flex justify-content-between align-items-center mb-4"
-        color="black"
-      >
-        <h2>Gestión de Torneos</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="text-dark">Gestión de Torneos</h2>
         <button
+          type="button"
           className="btn btn-dark"
           onClick={() => navigate("/admin/torneos/crear")}
         >
@@ -49,7 +53,7 @@ export default function TorneosListView() {
           onAction={() => navigate("/admin/torneos/crear")}
         />
       ) : (
-        <TablaTorneos torneos={torneos} />
+        <TablaTorneos torneos={torneos} onTorneoActualizado={cargarTorneos} />
       )}
     </div>
   );

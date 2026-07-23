@@ -204,4 +204,31 @@ public class TorneoService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se pudo eliminar el torneo");
         }
     }
+
+
+    @Transactional
+    public void actualizarTorneo(Long idTorneo, TorneoCreacionDTO dto) {
+        Torneo torneo = torneoRepository.buscarPorId(idTorneo)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
+
+        if (!"NOT_STARTED".equals(torneo.getEstadoTorneo())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Solo se pueden editar torneos que no han iniciado.");
+        }
+
+        int updated = torneoRepository.actualizarTorneo(
+                idTorneo,
+                dto.getNombreTorneo(),
+                dto.getFechaInicio(),
+                dto.getFechaTermino(),
+                dto.getNroPlazaMax(),
+                dto.getGeomZonaCompetencia(),
+                dto.getLineaTiro()
+        );
+
+        if (updated == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se pudo actualizar el torneo");
+        }
+    }
+
 }

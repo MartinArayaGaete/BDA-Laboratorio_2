@@ -251,4 +251,22 @@ public class TorneoRepository {
         return jdbcTemplate.update(sql, idTorneo);
     }
 
+
+    public int actualizarTorneo(Long idTorneo, String nombreTorneo, LocalDate fechaInicio,
+                                LocalDate fechaTermino, Integer nroPlazaMax,
+                                String espacioTorneo, String lineaDeTiro) {
+        String sql = """
+        UPDATE torneo SET 
+            nombre_torneo = ?, 
+            fecha_inicio = ?, 
+            fecha_termino = ?, 
+            nro_plaza_max = ?,
+            espacio_torneo = ST_SetSRID(ST_GeomFromGeoJSON(?), 4326),
+            linea_de_tiro = ST_SetSRID(ST_GeomFromGeoJSON(?), 4326)
+        WHERE id_torneo = ? AND estado_torneo = 'NOT_STARTED'
+        """;
+        return jdbcTemplate.update(sql, nombreTorneo, fechaInicio, fechaTermino,
+                nroPlazaMax, espacioTorneo, lineaDeTiro, idTorneo);
+    }
+
 }

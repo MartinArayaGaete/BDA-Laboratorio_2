@@ -236,4 +236,17 @@ public class TorneoController {
                     .body("Error interno al eliminar el torneo");
         }
     }
+
+    @PutMapping("/{idTorneo}")
+    public ResponseEntity<String> actualizarTorneo(@PathVariable Long idTorneo, @RequestBody TorneoCreacionDTO dto) {
+        try {
+            torneoService.actualizarTorneo(idTorneo, dto);
+            return ResponseEntity.ok("Torneo actualizado exitosamente");
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error interno al actualizar el torneo");
+        }
+    }
 }

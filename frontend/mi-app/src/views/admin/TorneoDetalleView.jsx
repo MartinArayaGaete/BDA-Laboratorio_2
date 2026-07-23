@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import torneoService from "../../api/apiTorneos.js";
 import apiParticipaciones from "../../api/apiParticipaciones.js";
 import categoriaService from "../../api/apiCategorias.js";
+import apiMapas from "../../api/apiMapas.js";
 import api from "../../api/api.js";
 import TorneoCabecera from "../../components/admin/TorneoCabecera.jsx";
 import ListaParticipantes from "../../components/admin/ListaParticipantes.jsx";
@@ -17,6 +18,58 @@ import {
   normalizeRoundPoint,
   pointToGeoJSONString,
 } from "../../utils/posicionesRonda.js";
+import { backendResponseToFeatureCollection } from "../../components/maps/geojson.js";
+
+const AMBIENTAL_FILL_PAINT = {
+  "fill-color": [
+    "match",
+    ["get", "tipo"],
+    "Viento Fuerte",
+    "#f97316",
+    "Lluvia Ligera",
+    "#0ea5e9",
+    "Calma Total",
+    "#22c55e",
+    "#8b5cf6",
+  ],
+  "fill-opacity": 0.42,
+};
+
+const AMBIENTAL_LINE_PAINT = {
+  "line-color": [
+    "match",
+    ["get", "tipo"],
+    "Viento Fuerte",
+    "#c2410c",
+    "Lluvia Ligera",
+    "#0369a1",
+    "Calma Total",
+    "#15803d",
+    "#6d28d9",
+  ],
+  "line-width": 3,
+  "line-opacity": 0.95,
+  "line-dasharray": [2, 1],
+};
+
+const AMBIENTAL_LABEL_PAINT = {
+  "text-color": "#0f172a",
+  "text-halo-color": "#ffffff",
+  "text-halo-width": 2,
+};
+
+const AMBIENTAL_LABEL_LAYOUT = {
+  "text-field": ["coalesce", ["get", "label"], ""],
+  "text-size": 13,
+  "text-anchor": "center",
+  "text-allow-overlap": true,
+};
+
+const AMBIENTAL_LEGEND_COLORS = {
+  "Viento Fuerte": "#f97316",
+  "Lluvia Ligera": "#0ea5e9",
+  "Calma Total": "#22c55e",
+};
 
 function requestErrorMessage(error, fallback) {
   const data = error?.response?.data;
@@ -64,6 +117,7 @@ export default function TorneoDetalleView() {
   const [posicionesVersion, setPosicionesVersion] = useState(0);
   const [mapMessage, setMapMessage] = useState("");
   const [registroRondaExistente, setRegistroRondaExistente] = useState(false);
+  const [zonasAmbientales, setZonasAmbientales] = useState([]);
 
   const cargarDatos = useCallback(async () => {
     try {
@@ -104,6 +158,25 @@ export default function TorneoDetalleView() {
   useEffect(() => {
     void cargarDatos();
   }, [cargarDatos]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    apiMapas
+      .obtenerZonasAmbientales()
+      .then((zonas) => {
+        if (!ignore) {
+          setZonasAmbientales(Array.isArray(zonas) ? zonas : []);
+        }
+      })
+      .catch(() => {
+        if (!ignore) setZonasAmbientales([]);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -242,6 +315,27 @@ export default function TorneoDetalleView() {
     setMapMessage("Elige una nueva dirección para la diana.");
   };
 
+  const zonasAmbientalesGeojson = useMemo(
+    () =>
+      backendResponseToFeatureCollection(
+        zonasAmbientales,
+        "tipo",
+        ["Polygon", "MultiPolygon"],
+        "geomArea",
+      ),
+    [zonasAmbientales],
+  );
+  const tiposZonasAmbientales = useMemo(
+    () =>
+      [
+        ...new Set(
+          zonasAmbientales
+            .map((zona) => zona?.tipo)
+            .filter((tipo) => typeof tipo === "string" && tipo.trim()),
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
+    [zonasAmbientales],
+  );
   const ubicacionesListas = Boolean(posicionArquero && posicionDiana);
   const puedeSeleccionarUbicacion =
     Boolean(usuarioSel && rondaSel) &&
@@ -377,6 +471,14 @@ export default function TorneoDetalleView() {
           <div style={{ width: "100%", height: "420px" }}>
             <Basemap>
               <PolygonsLayer data={torneo.geomZonaCompetencia} />
+              <PolygonsLayer
+                id="zonas-ambientales"
+                data={zonasAmbientalesGeojson}
+                fillPaint={AMBIENTAL_FILL_PAINT}
+                linePaint={AMBIENTAL_LINE_PAINT}
+                labelPaint={AMBIENTAL_LABEL_PAINT}
+                labelLayout={AMBIENTAL_LABEL_LAYOUT}
+              />
               <LinesLayer data={torneo.lineaTiro} />
               <ArcherDianaSelectorLayer
                 enabled={puedeSeleccionarUbicacion}
@@ -393,6 +495,22 @@ export default function TorneoDetalleView() {
           </div>
           <div className={`alert mt-2 mb-3 ${mapMessage ? "alert-info" : "alert-secondary"}`}>
             {mapMessage || instruccionMapa}
+            {tiposZonasAmbientales.length > 0 && (
+              <div className="d-flex flex-wrap gap-2 mt-2">
+                {tiposZonasAmbientales.map((tipo) => (
+                  <span
+                    key={tipo}
+                    className="badge text-dark border"
+                    style={{
+                      backgroundColor:
+                        AMBIENTAL_LEGEND_COLORS[tipo] ?? "#ddd6fe",
+                    }}
+                  >
+                    {tipo}
+                  </span>
+                ))}
+              </div>
+            )}
             {posicionArquero && (
               <button
                 type="button"

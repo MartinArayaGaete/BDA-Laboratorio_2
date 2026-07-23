@@ -131,22 +131,27 @@ export default function TorneoDetalleView() {
 
       setTorneo(torneoActual);
 
-      const [datosCompletos, rondasData, podioData] = await Promise.all([
-        apiParticipaciones
-          .obtenerDatosCompletosTorneo(idTorneo)
-          .catch(() => null),
-        api
-          .get(`/rondas/torneo/${idTorneo}`)
-          .then((r) => r.data)
-          .catch(() => []),
-        torneoActual.estadoTorneo === "COMPLETED"
-          ? torneoService.obtenerPodio(idTorneo).catch(() => [])
-          : Promise.resolve([]),
-      ]);
+      const [datosCompletos, rondasData, podioData, zonasAmbientalesData] =
+        await Promise.all([
+          apiParticipaciones
+            .obtenerDatosCompletosTorneo(idTorneo)
+            .catch(() => null),
+          api
+            .get(`/rondas/torneo/${idTorneo}`)
+            .then((r) => r.data)
+            .catch(() => []),
+          torneoActual.estadoTorneo === "COMPLETED"
+            ? torneoService.obtenerPodio(idTorneo).catch(() => [])
+            : Promise.resolve([]),
+          apiMapas.obtenerZonasAmbientales().catch(() => []),
+        ]);
 
       setInscritos(datosCompletos?.arqueros || []);
       setRondas(rondasData);
       setPodio(podioData);
+      setZonasAmbientales(
+        Array.isArray(zonasAmbientalesData) ? zonasAmbientalesData : [],
+      );
     } catch (err) {
       setError("Error al cargar los datos del torneo");
       console.error(err);
@@ -158,25 +163,6 @@ export default function TorneoDetalleView() {
   useEffect(() => {
     void cargarDatos();
   }, [cargarDatos]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    apiMapas
-      .obtenerZonasAmbientales()
-      .then((zonas) => {
-        if (!ignore) {
-          setZonasAmbientales(Array.isArray(zonas) ? zonas : []);
-        }
-      })
-      .catch(() => {
-        if (!ignore) setZonasAmbientales([]);
-      });
-
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   useEffect(() => {
     let ignore = false;

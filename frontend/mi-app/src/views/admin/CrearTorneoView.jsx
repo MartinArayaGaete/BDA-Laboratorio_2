@@ -1,5 +1,6 @@
 // src/views/admin/CrearTorneoView.jsx
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import apiMapas from "../../api/apiMapas.js";
 import FormCrearTorneo from "../../components/admin/FormCrearTorneo.jsx";
 import Basemap from "../../components/maps/Basemap.jsx";
 import LinesLayer from "../../components/maps/LinesLayer.jsx";
@@ -7,6 +8,7 @@ import PolygonsLayer from "../../components/maps/PolygonsLayer.jsx";
 import TorneoZoneEditorLayer from "../../components/maps/TorneoZoneEditorLayer.jsx";
 import useTorneoMapSelection from "../../hooks/useTorneoMapSelection.js";
 import { getRectangleMeasurementLines } from "../../utils/torneoGeometry.js";
+import { backendResponseToFeatureCollection } from "../../components/maps/geojson.js";
 
 const MAP_CENTER = [-70.634, -33.448];
 
@@ -19,6 +21,38 @@ const ZONA_LABEL_LINE_PAINT = {
   "line-color": "#1d4ed8",
   "line-opacity": 0,
   "line-width": 0,
+};
+
+const AMBIENTAL_FILL_PAINT = {
+  "fill-color": [
+    "match",
+    ["get", "tipo"],
+    "Viento Fuerte",
+    "#f97316",
+    "Lluvia Ligera",
+    "#0ea5e9",
+    "Calma Total",
+    "#22c55e",
+    "#8b5cf6",
+  ],
+  "fill-opacity": 0.35,
+};
+
+const AMBIENTAL_LINE_PAINT = {
+  "line-color": [
+    "match",
+    ["get", "tipo"],
+    "Viento Fuerte",
+    "#c2410c",
+    "Lluvia Ligera",
+    "#0369a1",
+    "Calma Total",
+    "#15803d",
+    "#6d28d9",
+  ],
+  "line-width": 3,
+  "line-opacity": 0.95,
+  "line-dasharray": [2, 1],
 };
 
 const LINEA_PAINT = {
@@ -68,6 +102,19 @@ const MEDIDAS_LABEL_LAYOUT = {
   "text-allow-overlap": true,
 };
 
+const AMBIENTAL_LABEL_LAYOUT = {
+  "text-field": ["coalesce", ["get", "label"], ""],
+  "text-size": 13,
+  "text-anchor": "center",
+  "text-allow-overlap": true,
+};
+
+const AMBIENTAL_LEGEND_COLORS = {
+  "Viento Fuerte": "#f97316",
+  "Lluvia Ligera": "#0ea5e9",
+  "Calma Total": "#22c55e",
+};
+
 function formatMeters(value) {
   if (!Number.isFinite(value)) return "0 m";
 
@@ -80,6 +127,7 @@ export default function CrearTorneoView() {
     minHeightM: 50,
   });
   const [resetVersion, setResetVersion] = useState(0);
+  const [zonasAmbientales, setZonasAmbientales] = useState([]);
   const {
     coordsZonaCompetencia,
     coordsLineaTiro,
@@ -99,6 +147,25 @@ export default function CrearTorneoView() {
       defaultHeightM: minHeightM > 0 ? minHeightM : 1,
     };
   }, [mapRequirements]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    apiMapas
+      .obtenerZonasAmbientales()
+      .then((zonas) => {
+        if (!ignore) {
+          setZonasAmbientales(Array.isArray(zonas) ? zonas : []);
+        }
+      })
+      .catch(() => {
+        if (!ignore) setZonasAmbientales([]);
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleGeometryChange = useCallback(
     ({ zonaCompetencia, lineaTiro }) => {
@@ -135,6 +202,29 @@ export default function CrearTorneoView() {
       geometry: lineaTiroGeoJSON,
     };
   }, [lineaTiroGeoJSON]);
+
+  const zonasAmbientalesGeoJSON = useMemo(
+    () =>
+      backendResponseToFeatureCollection(
+        zonasAmbientales,
+        "tipo",
+        ["Polygon", "MultiPolygon"],
+        "geomArea",
+      ),
+    [zonasAmbientales],
+  );
+
+  const tiposZonasAmbientales = useMemo(
+    () =>
+      [
+        ...new Set(
+          zonasAmbientales
+            .map((zona) => zona?.tipo)
+            .filter((tipo) => typeof tipo === "string" && tipo.trim()),
+        ),
+      ].sort((a, b) => a.localeCompare(b)),
+    [zonasAmbientales],
+  );
 
   const medidasZonaGeoJSON = useMemo(() => {
     const measurements = getRectangleMeasurementLines(zonaCompetenciaGeoJSON);
@@ -189,12 +279,36 @@ export default function CrearTorneoView() {
                 Para rotar la zona, seleccionala y arrastrala manteniendo
                 Control + R. Tambien puedes moverla arrastrandola y agrandarla
                 desde sus esquinas.
+                {tiposZonasAmbientales.length > 0 && (
+                  <div className="d-flex flex-wrap gap-2 mt-2">
+                    {tiposZonasAmbientales.map((tipo) => (
+                      <span
+                        key={tipo}
+                        className="badge text-dark border"
+                        style={{
+                          backgroundColor:
+                            AMBIENTAL_LEGEND_COLORS[tipo] ?? "#ddd6fe",
+                        }}
+                      >
+                        {tipo}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <div
                 className="border overflow-hidden"
                 style={{ height: "520px", borderRadius: "8px" }}
               >
                 <Basemap center={MAP_CENTER}>
+                  <PolygonsLayer
+                    id="crear-torneo-zonas-ambientales"
+                    data={zonasAmbientalesGeoJSON}
+                    fillPaint={AMBIENTAL_FILL_PAINT}
+                    linePaint={AMBIENTAL_LINE_PAINT}
+                    labelPaint={LABEL_PAINT}
+                    labelLayout={AMBIENTAL_LABEL_LAYOUT}
+                  />
                   <TorneoZoneEditorLayer
                     minWidthM={mapDimensions.minWidthM}
                     minHeightM={mapDimensions.minHeightM}

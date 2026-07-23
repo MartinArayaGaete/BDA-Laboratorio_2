@@ -56,6 +56,31 @@ BEGIN
         v_nombre_torneo;
     END IF;
 
+    -- Validar seguridad: Los arqueros deben estar a mas de 5 metros de distancia entre sí
+    IF EXISTS (
+        SELECT 1
+        FROM puntaje_ronda pr
+        JOIN participacion p ON p.id_participacion = pr.id_participacion
+        WHERE p.id_torneo = v_id_torneo
+          AND pr.posicion_arquero IS NOT NULL
+          AND ST_Distance(pr.posicion_arquero, NEW.posicion_arquero) < 5
+    ) THEN
+        RAISE EXCEPTION
+        'REGISTRO RECHAZADO: La posición del arquero está demasiado cerca (<5m) de otro arquero en el torneo "%".',
+        v_nombre_torneo;
+    END IF;
+
+    -- Validar que la distancia de tiro del arquero coincida exactamente con la distancia de tiro del torneo
+    IF NEW.distancia_tiro IS DISTINCT FROM (
+        SELECT t.distancia_tiro
+        FROM torneo t
+        WHERE t.id_torneo = v_id_torneo
+    ) THEN
+        RAISE EXCEPTION
+        'REGISTRO RECHAZADO: La distancia de tiro del arquero no coincide con la distancia de tiro del torneo "%".',
+        v_nombre_torneo;
+    END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

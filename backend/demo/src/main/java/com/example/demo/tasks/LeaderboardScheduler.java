@@ -14,7 +14,7 @@ public class LeaderboardScheduler {
     }
 
     //Cada minuto al segundo 30 -> @Scheduled(cron = "30 * * * * *", zone = "America/Santiago")
-    @Scheduled(cron = "0 0 2 * * *", zone = "America/Santiago")
+    @Scheduled(cron = "30 * * * * *", zone = "America/Santiago")
     public void refreshLeaderboard() {
         jdbcTemplate.execute("REFRESH MATERIALIZED VIEW leaderboard_top_50");
     }

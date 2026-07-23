@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 import torneoService from "../../api/apiTorneos.js";
 import apiParticipaciones from "../../api/apiParticipaciones.js";
 import categoriaService from "../../api/apiCategorias.js";
@@ -76,7 +77,7 @@ function requestErrorMessage(error, fallback) {
 
   if (typeof data === "string" && data.trim()) return data;
 
-  return data?.message ?? data?.detail ?? fallback;
+  return data?.message ?? data?.detail ?? data?.error ?? fallback;
 }
 
 function normalizeArrowScores(value) {
@@ -97,6 +98,7 @@ function normalizeArrowScores(value) {
 export default function TorneoDetalleView() {
   const { idTorneo } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [torneo, setTorneo] = useState(null);
   const [inscritos, setInscritos] = useState([]);
@@ -104,6 +106,7 @@ export default function TorneoDetalleView() {
   const [podio, setPodio] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [errorPuntaje, setErrorPuntaje] = useState("");
   const [mostrarMapa, setMostrarMapa] = useState(true);
 
   const [usuarioSel, setUsuarioSel] = useState("");
@@ -274,6 +277,7 @@ export default function TorneoDetalleView() {
     setPosicionDiana(null);
     setRegistroRondaExistente(false);
     setMapMessage("");
+    setErrorPuntaje("");
   };
 
   const handleCambiarRonda = (numeroRonda) => {
@@ -283,6 +287,7 @@ export default function TorneoDetalleView() {
     setPosicionesRonda([]);
     setRegistroRondaExistente(false);
     setMapMessage("");
+    setErrorPuntaje("");
   };
 
   const handleCambiarPosiciones = ({ arquero, diana }) => {
@@ -362,7 +367,8 @@ export default function TorneoDetalleView() {
   };
 
   const handleGuardarPuntaje = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
+    setErrorPuntaje("");
     const flechasInt = flechas.map((flecha) => Number(flecha));
 
     if (
@@ -370,47 +376,59 @@ export default function TorneoDetalleView() {
       flechas.some(
         (flecha, index) =>
           flecha === "" ||
-          !Number.isInteger(flechasInt[index]) ||
-          flechasInt[index] < 0 ||
-          flechasInt[index] > 10,
+          !Number.isInteger(flechasInt[index]),
       )
     ) {
-      setError("Completa las seis flechas con valores enteros entre 0 y 10.");
+      setErrorPuntaje(
+        "Completa las seis flechas con valores enteros.",
+      );
       return;
     }
 
     if (!ubicacionesListas) {
-      setError("Debes ubicar al arquero y a la diana antes de registrar las flechas.");
+      setErrorPuntaje(
+        "Debes ubicar al arquero y a la diana antes de registrar las flechas.",
+      );
       return;
     }
 
     const ronda = rondas.find((r) => r.numeroRonda === Number(rondaSel));
     if (!ronda) return;
 
+    const idAdmin = Number(user?.idUsuario);
+    if (!Number.isInteger(idAdmin) || idAdmin <= 0) {
+      setErrorPuntaje(
+        "No se encontró el administrador autenticado para registrar las flechas.",
+      );
+      return;
+    }
+
     const participacion = inscritos.find(
       (inscrito) => String(inscrito.idUsuario) === String(usuarioSel),
     );
     if (!participacion?.idParticipacion) {
-      setError("No se encontró la participación del arquero seleccionado.");
+      setErrorPuntaje(
+        "No se encontró la participación del arquero seleccionado.",
+      );
       return;
     }
 
-    setError("");
     setGuardandoPuntaje(true);
     try {
       await torneoService.registrarPuntaje({
         idRonda: ronda.idRonda,
         idParticipacion: participacion.idParticipacion,
-        idAdmin: 1,
+        idAdmin,
         flechas: flechasInt,
         posicionArquero: pointToGeoJSONString(posicionArquero),
         posicionDiana: pointToGeoJSONString(posicionDiana),
       });
+      setErrorPuntaje("");
       setMapMessage("Puntajes y ubicaciones registrados correctamente.");
       setPosicionesVersion((version) => version + 1);
       void cargarDatos();
     } catch (requestError) {
-      setError(
+      setErrorPuntaje(
         requestErrorMessage(
           requestError,
           "No se pudieron registrar los puntajes de la ronda.",
@@ -540,6 +558,7 @@ export default function TorneoDetalleView() {
             ubicacionesListas={ubicacionesListas}
             registroRondaExistente={registroRondaExistente}
             guardandoPuntaje={guardandoPuntaje}
+            errorPuntaje={errorPuntaje}
             onGuardarPuntaje={handleGuardarPuntaje}
           />
         </div>

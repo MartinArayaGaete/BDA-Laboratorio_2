@@ -15,6 +15,7 @@ export default function FormularioFlechas({
   ubicacionesListas,
   registroRondaExistente,
   guardandoPuntaje,
+  errorPuntaje,
   onGuardarPuntaje,
 }) {
   const [climas, setClimas] = useState([]);
@@ -24,12 +25,7 @@ export default function FormularioFlechas({
     flechas.length === 6 &&
     flechas.every((flecha) => {
       const puntaje = Number(flecha);
-      return (
-        flecha !== "" &&
-        Number.isInteger(puntaje) &&
-        puntaje >= 0 &&
-        puntaje <= 10
-      );
+      return flecha !== "" && Number.isInteger(puntaje);
     });
 
   useEffect(() => {
@@ -198,7 +194,7 @@ export default function FormularioFlechas({
                 Debes ubicar al arquero y la diana en el mapa antes de registrar.
               </div>
             )}
-            <label className="form-label fw-bold">Puntajes (0-10)</label>
+            <label className="form-label fw-bold">Puntajes</label>
             <div className="d-flex gap-3 mb-3">
               {flechas.map((val, idx) => (
                 <div key={idx} className="text-center">
@@ -207,8 +203,7 @@ export default function FormularioFlechas({
                     className="form-control text-center fw-bold"
                     style={{ width: "80px", fontSize: "1.5rem" }}
                     value={val}
-                    min="0"
-                    max="10"
+                    step="1"
                     required
                     onChange={(e) => {
                       const nuevas = [...flechas];
@@ -230,6 +225,11 @@ export default function FormularioFlechas({
             >
               {guardandoPuntaje ? "Guardando..." : "Guardar Puntajes"}
             </button>
+            {errorPuntaje && (
+              <div className="alert alert-danger mt-3 mb-0">
+                {errorPuntaje}
+              </div>
+            )}
           </div>
         )}
         {rondaSel && !zonaAsignada && (

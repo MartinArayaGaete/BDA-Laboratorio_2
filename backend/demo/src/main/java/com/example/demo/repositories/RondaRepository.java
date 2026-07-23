@@ -88,4 +88,20 @@ public class RondaRepository {
         String sql = "UPDATE ronda SET id_zona_ambiental = ? WHERE id_ronda = ?";
         return jdbcTemplate.update(sql, idZonaAmbiental, idRonda);
     }
+
+    public int eliminarRonda(Long idRonda) {
+        String sql = "DELETE FROM ronda WHERE id_ronda = ? " +
+                "AND id_torneo IN (SELECT id_torneo FROM torneo WHERE estado_torneo = 'NOT_STARTED')";
+        return jdbcTemplate.update(sql, idRonda);
+    }
+
+    public Optional<Ronda> buscarPorId(Long idRonda) {
+        String sql = "SELECT id_ronda, id_torneo, numero_ronda, id_zona_ambiental FROM ronda WHERE id_ronda = ?";
+        try {
+            Ronda r = jdbcTemplate.queryForObject(sql, (rs, rowNum) -> mapRowToRonda(rs), idRonda);
+            return Optional.ofNullable(r);
+        } catch (EmptyResultDataAccessException e) {
+            return Optional.empty();
+        }
+    }
 }

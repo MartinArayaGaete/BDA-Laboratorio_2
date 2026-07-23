@@ -67,4 +67,17 @@ public class RondaController {
             return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
         }
     }
+
+    @DeleteMapping("/{idRonda}")
+    public ResponseEntity<String> eliminarRonda(@PathVariable Long idRonda) {
+        try {
+            rondaService.eliminarRonda(idRonda);
+            return ResponseEntity.ok("Ronda eliminada exitosamente");
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error interno al eliminar la ronda");
+        }
+    }
 }

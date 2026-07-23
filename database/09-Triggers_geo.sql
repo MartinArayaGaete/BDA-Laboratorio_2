@@ -6,6 +6,7 @@
 --   2. Zona de competencia definida
 --   3. Arquero dentro del polígono (ST_Contains)
 --   4. Separación mínima de 5 metros entre arqueros (ST_DistanceSphere)
+--   5. Distancia arquero-diana ≤ distancia de categoría (ST_DistanceSphere)
 -- ============================================
 
 CREATE OR REPLACE FUNCTION validar_registro_puntaje_fn()
@@ -15,6 +16,8 @@ DECLARE
     v_estado_torneo VARCHAR(80);
     v_nombre_torneo VARCHAR(80);
     v_id_torneo BIGINT;
+    v_distancia_categoria INT;
+    v_distancia_tiro FLOAT;
 BEGIN
     -- Obtener torneo asociado a la participación
     SELECT p.id_torneo
@@ -22,14 +25,17 @@ BEGIN
     FROM participacion p
     WHERE p.id_participacion = NEW.id_participacion;
 
-    -- Obtener información del torneo
+    -- Obtener información del torneo y distancia de la categoría
     SELECT t.estado_torneo,
            t.nombre_torneo,
-           t.espacio_torneo
+           t.espacio_torneo,
+           c.distancia_tiro
     INTO v_estado_torneo,
          v_nombre_torneo,
-         v_espacio_torneo
+         v_espacio_torneo,
+         v_distancia_categoria
     FROM torneo t
+    JOIN categoria c ON t.id_categoria = c.id_categoria
     WHERE t.id_torneo = v_id_torneo;
 
     -- 1. Validar estado del torneo
@@ -69,6 +75,17 @@ BEGIN
             RAISE EXCEPTION
             'REGISTRO RECHAZADO: Otro arquero está a menos de 5 metros en el torneo "%".',
             v_nombre_torneo;
+        END IF;
+
+        -- 3c. Validar distancia entre arquero y diana según categoría
+        IF NEW.posicion_diana IS NOT NULL AND v_distancia_categoria IS NOT NULL THEN
+            v_distancia_tiro := ST_DistanceSphere(NEW.posicion_arquero, NEW.posicion_diana);
+            IF v_distancia_tiro > v_distancia_categoria THEN
+                RAISE EXCEPTION
+                'REGISTRO RECHAZADO: Distancia de tiro excedida. Distancia: % metros (Máximo permitido: % metros para esta categoría).',
+                ROUND(v_distancia_tiro::numeric, 2),
+                v_distancia_categoria;
+            END IF;
         END IF;
 
     END IF;

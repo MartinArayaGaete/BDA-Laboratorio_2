@@ -1,7 +1,11 @@
 -- ============================================
 -- 09-Triggers_geo.sql
 -- Trigger Geoespacial
--- Validación: El arquero debe estar dentro de la zona de competencia
+-- Validaciones:
+--   1. Torneo en estado IN_COURSE
+--   2. Zona de competencia definida
+--   3. Arquero dentro del polígono (ST_Contains)
+--   4. Separación mínima de 5 metros entre arqueros (ST_DistanceSphere)
 -- ============================================
 
 CREATE OR REPLACE FUNCTION validar_registro_puntaje_fn()
@@ -28,7 +32,7 @@ BEGIN
     FROM torneo t
     WHERE t.id_torneo = v_id_torneo;
 
-    -- Validar estado del torneo
+    -- 1. Validar estado del torneo
     IF v_estado_torneo IS DISTINCT FROM 'IN_COURSE' THEN
         RAISE EXCEPTION
         'REGISTRO RECHAZADO: El torneo "%" no se encuentra en curso (Estado actual: %).',
@@ -36,54 +40,44 @@ BEGIN
         v_estado_torneo;
     END IF;
 
-    -- Validar existencia de la zona de competencia
+    -- 2. Validar existencia de la zona de competencia
     IF v_espacio_torneo IS NULL THEN
         RAISE EXCEPTION
         'REGISTRO RECHAZADO: El torneo "%" no tiene una zona de competencia definida.',
         v_nombre_torneo;
     END IF;
 
-    -- Validar existencia de la posición del arquero
-    IF NEW.posicion_arquero IS NULL THEN
-        RAISE EXCEPTION
-        'REGISTRO RECHAZADO: La posición del arquero no está definida.';
-    END IF;
+    -- 3. Si hay posición del arquero, validar geocercado y seguridad
+    IF NEW.posicion_arquero IS NOT NULL THEN
 
-    -- Validar geocercado
-    IF NOT ST_Contains(v_espacio_torneo, NEW.posicion_arquero) THEN
-        RAISE EXCEPTION
-        'REGISTRO RECHAZADO: El arquero se encuentra fuera de la zona de competencia del torneo "%".',
-        v_nombre_torneo;
-    END IF;
+        -- 3a. Validar que el arquero esté dentro de la zona de competencia
+        IF NOT ST_Contains(v_espacio_torneo, NEW.posicion_arquero) THEN
+            RAISE EXCEPTION
+            'REGISTRO RECHAZADO: El arquero se encuentra fuera de la zona de competencia del torneo "%".',
+            v_nombre_torneo;
+        END IF;
 
-    -- Validar seguridad: Los arqueros deben estar a mas de 5 metros de distancia entre sí
-    IF EXISTS (
-        SELECT 1
-        FROM puntaje_ronda pr
-        JOIN participacion p ON p.id_participacion = pr.id_participacion
-        WHERE p.id_torneo = v_id_torneo
-          AND pr.posicion_arquero IS NOT NULL
-          AND ST_Distance(pr.posicion_arquero, NEW.posicion_arquero) < 5
-    ) THEN
-        RAISE EXCEPTION
-        'REGISTRO RECHAZADO: La posición del arquero está demasiado cerca (<5m) de otro arquero en el torneo "%".',
-        v_nombre_torneo;
-    END IF;
+        -- 3b. Validar separación mínima de 5 metros entre arqueros en la MISMA ronda
+        IF EXISTS (
+            SELECT 1
+            FROM puntaje_ronda pr2
+            WHERE pr2.id_ronda = NEW.id_ronda
+              AND pr2.id_puntaje_ronda IS DISTINCT FROM NEW.id_puntaje_ronda
+              AND pr2.posicion_arquero IS NOT NULL
+              AND ST_DistanceSphere(pr2.posicion_arquero, NEW.posicion_arquero) < 5.0
+        ) THEN
+            RAISE EXCEPTION
+            'REGISTRO RECHAZADO: Otro arquero está a menos de 5 metros en el torneo "%".',
+            v_nombre_torneo;
+        END IF;
 
-    -- Validar que la distancia de tiro del arquero coincida exactamente con la distancia de tiro del torneo
-    IF NEW.distancia_tiro IS DISTINCT FROM (
-        SELECT t.distancia_tiro
-        FROM torneo t
-        WHERE t.id_torneo = v_id_torneo
-    ) THEN
-        RAISE EXCEPTION
-        'REGISTRO RECHAZADO: La distancia de tiro del arquero no coincide con la distancia de tiro del torneo "%".',
-        v_nombre_torneo;
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_validar_registro_puntaje ON puntaje_ronda;
 
 CREATE TRIGGER trigger_validar_registro_puntaje
 BEFORE INSERT OR UPDATE

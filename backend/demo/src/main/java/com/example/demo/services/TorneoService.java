@@ -187,4 +187,21 @@ public class TorneoService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "No se encontró puntaje para el arquero en esta ronda"));
     }
+
+
+    @Transactional
+    public void eliminarTorneo(Long idTorneo) {
+        Torneo torneo = torneoRepository.buscarPorId(idTorneo)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Torneo no encontrado"));
+
+        if (!"NOT_STARTED".equals(torneo.getEstadoTorneo())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Solo se pueden eliminar torneos que no han iniciado. Estado actual: " + torneo.getEstadoTorneo());
+        }
+
+        int deleted = torneoRepository.eliminarTorneo(idTorneo);
+        if (deleted == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No se pudo eliminar el torneo");
+        }
+    }
 }

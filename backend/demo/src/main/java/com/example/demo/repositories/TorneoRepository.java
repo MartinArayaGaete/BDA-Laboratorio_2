@@ -245,4 +245,10 @@ public class TorneoRepository {
         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
+
+    public int eliminarTorneo(Long idTorneo) {
+        String sql = "DELETE FROM torneo WHERE id_torneo = ? AND estado_torneo = 'NOT_STARTED'";
+        return jdbcTemplate.update(sql, idTorneo);
+    }
+
 }

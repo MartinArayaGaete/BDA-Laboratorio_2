@@ -51,6 +51,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/sectores-ambientales/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/categorias-ambientales").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/categorias-ambientales/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/torneos/*").hasRole("ADMIN")
 
                         // Rutas Compartidas
                         .requestMatchers(HttpMethod.POST, "/api/participaciones/inscribir").hasAnyRole("ADMIN", "ARQUERO")

@@ -66,6 +66,11 @@ const torneoService = {
     );
     return response.data;
   },
+
+  eliminarTorneo: async (idTorneo) => {
+    const response = await api.delete(`/torneos/${idTorneo}`);
+    return response.data;
+  },
 };
 
 export default torneoService;

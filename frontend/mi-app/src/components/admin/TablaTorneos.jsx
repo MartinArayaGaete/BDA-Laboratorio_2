@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import torneoService from "../../api/apiTorneos.js";
 
 const ESTADOS = {
   NOT_STARTED: { class: "bg-secondary", text: "No Iniciado" },
@@ -7,8 +8,24 @@ const ESTADOS = {
   COMPLETED: { class: "bg-success", text: "Finalizado" },
 };
 
-export default function TablaTorneos({ torneos }) {
+export default function TablaTorneos({ torneos, onTorneoEliminado }) {
   const navigate = useNavigate();
+  const [eliminando, setEliminando] = useState(null);
+
+  const handleEliminar = async (torneo) => {
+    if (!window.confirm(`¿Eliminar el torneo "${torneo.nombreTorneo}"?`))
+      return;
+
+    setEliminando(torneo.idTorneo);
+    try {
+      await torneoService.eliminarTorneo(torneo.idTorneo);
+      if (onTorneoEliminado) onTorneoEliminado();
+    } catch (err) {
+      alert(err.response?.data?.message || "Error al eliminar el torneo");
+    } finally {
+      setEliminando(null);
+    }
+  };
 
   if (!torneos || torneos.length === 0) return null;
 
@@ -37,11 +54,22 @@ export default function TablaTorneos({ torneos }) {
                   {torneo.nroPlazaMax ?? "?"}
                 </p>
                 <button
-                  className="btn btn-outline-dark btn-sm w-100"
+                  className="btn btn-outline-dark btn-sm w-100 mb-1"
                   onClick={() => navigate(`/admin/torneos/${torneo.idTorneo}`)}
                 >
                   Gestionar Torneo
                 </button>
+                {torneo.estadoTorneo === "NOT_STARTED" && (
+                  <button
+                    className="btn btn-outline-danger btn-sm w-100"
+                    onClick={() => handleEliminar(torneo)}
+                    disabled={eliminando === torneo.idTorneo}
+                  >
+                    {eliminando === torneo.idTorneo
+                      ? "Eliminando..."
+                      : "Eliminar"}
+                  </button>
+                )}
               </div>
             </div>
           </div>
